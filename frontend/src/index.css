@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes shine {
+  to {
+    background-position: 200% center;
+  }
+}
+
+.animate-text-shine {
+  animation: shine 4s linear infinite;
+}
+.card {
+  @apply backdrop-blur-2xl 
+  bg-white/5 
+  border border-white/10 
+  p-6 rounded-2xl 
+  shadow-2xl;
+}
+
+.title {
+  @apply text-lg font-semibold mb-4 text-white;
+}

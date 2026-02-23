@@ -2,11 +2,11 @@ import nodemailer from "nodemailer";
 
 const sendEmail = async (to, subject, html) => {
   try {
-
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
-      port: 587,              // ⭐ IMPORTANT
-      secure: false,          // ⭐ IMPORTANT (false for 587)
+      port: 587,
+      secure: false,
+      family: 4, // ⭐ FORCE IPV4 (Render fix)
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -27,6 +27,7 @@ const sendEmail = async (to, subject, html) => {
 
   } catch (error) {
     console.log("❌ Email Error:", error);
+    throw error;
   }
 };
 

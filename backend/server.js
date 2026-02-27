@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config(); // ⭐ MUST BE FIRST
+dotenv.config(); // ⭐ MUST BE FIRST LINE
 
 import express from "express";
 import cors from "cors";
@@ -14,13 +14,19 @@ import adminEmailRoutes from "./routes/adminEmailRoutes.js";
 
 const app = express();
 
-// ✅ DEBUG (REMOVE LATER)
-console.log("RESEND KEY LOADED:", process.env.RESEND_API_KEY ? "YES" : "NO");
 
-// Connect Database
+// ✅ DEBUG ENV (REMOVE AFTER TEST)
+console.log(
+  "EMAIL CONFIG:",
+  process.env.EMAIL_USER ? "LOADED ✅" : "MISSING ❌"
+);
+
+
+// ================= DATABASE =================
 connectDB();
 
-// ✅ CORS CONFIG
+
+// ================= CORS =================
 app.use(
   cors({
     origin: [
@@ -32,14 +38,17 @@ app.use(
   })
 );
 
-// Body Parser
+
+// ================= BODY PARSER =================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static Uploads
+
+// ================= STATIC FILES =================
 app.use("/uploads", express.static("uploads"));
 
-// Routes
+
+// ================= ROUTES =================
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
@@ -47,14 +56,16 @@ app.use("/api/applications", applicationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminEmailRoutes);
 
-// Health Check
+
+// ================= HEALTH CHECK =================
 app.get("/", (req, res) => {
   res.send("🚀 CareerForge API running successfully");
 });
 
-// Server Start
+
+// ================= SERVER =================
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () =>
-  console.log(`Server running on port ${PORT}`)
+  console.log(`🚀 Server running on port ${PORT}`)
 );

@@ -2,7 +2,12 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+
 import sendEmail from "../utils/sendEmail.js";
+import {
+  otpEmailTemplate,
+  resetPasswordTemplate,
+} from "../utils/emailTemplates.js";
 
 
 // ================= TOKEN =================
@@ -17,7 +22,7 @@ const generateToken = (id) => {
 
 
 // =====================================================
-// REGISTER (USER + RECRUITER + ADMIN EMAIL)
+// REGISTER
 // =====================================================
 export const register = async (req, res) => {
   try {
@@ -64,16 +69,11 @@ export const register = async (req, res) => {
     await sendEmail(
       user.email,
       "Verify Your Email",
-      `
-      <h2>Email Verification</h2>
-      <p>Hello ${name}</p>
-      <h1>${otp}</h1>
-      <p>OTP expires in 10 minutes</p>
-      `
+      otpEmailTemplate(user.name, otp)
     );
 
 
-    // ================= ADMIN EMAIL =================
+    // ================= ADMIN EMAIL (RECRUITER) =================
     if (role === "recruiter") {
 
       const approveLink =
@@ -116,6 +116,7 @@ export const register = async (req, res) => {
     });
 
   } catch (error) {
+    console.log("Register Error:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -156,6 +157,7 @@ export const verifyEmail = async (req, res) => {
     });
 
   } catch (error) {
+    console.log("Verify Error:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -165,7 +167,7 @@ export const verifyEmail = async (req, res) => {
 
 
 // =====================================================
-// ⭐ RESEND OTP (IMPORTANT FIX)
+// RESEND OTP
 // =====================================================
 export const resendOTP = async (req, res) => {
   try {
@@ -190,7 +192,7 @@ export const resendOTP = async (req, res) => {
     await sendEmail(
       user.email,
       "OTP Resent",
-      `<h2>Your OTP: ${otp}</h2>`
+      otpEmailTemplate(user.name, otp)
     );
 
     res.json({
@@ -198,6 +200,7 @@ export const resendOTP = async (req, res) => {
     });
 
   } catch (error) {
+    console.log("Resend OTP Error:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -251,6 +254,7 @@ export const login = async (req, res) => {
     });
 
   } catch (error) {
+    console.log("Login Error:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -285,7 +289,7 @@ export const forgotPassword = async (req, res) => {
     await sendEmail(
       user.email,
       "Password Reset OTP",
-      `<h2>Your OTP: ${otp}</h2>`
+      resetPasswordTemplate(user.name, otp)
     );
 
     res.json({
@@ -293,6 +297,7 @@ export const forgotPassword = async (req, res) => {
     });
 
   } catch (error) {
+    console.log("Forgot Password Error:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -334,6 +339,7 @@ export const resetPassword = async (req, res) => {
     });
 
   } catch (error) {
+    console.log("Reset Error:", error);
     res.status(500).json({
       message: error.message,
     });

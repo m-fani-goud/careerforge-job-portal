@@ -1,41 +1,21 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 const sendEmail = async (to, subject, html) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false, // TLS
-      family: 4, // ⭐ Force IPv4 (Render fix)
+    // ⭐ Create resend instance INSIDE function
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-
-      tls: {
-        rejectUnauthorized: false,
-      },
-
-      connectionTimeout: 10000, // ⭐ Prevent hanging
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
+    const response = await resend.emails.send({
+      from: process.env.EMAIL_FROM, // onboarding@resend.dev
+      to: to,
+      subject: subject,
+      html: html,
     });
 
-    // ⭐ Verify connection before sending (important)
-    await transporter.verify();
-
-    await transporter.sendMail({
-      from: `"CareerForge" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html,
-    });
-
-    console.log("✅ Email sent to:", to);
+    console.log("✅ Email sent:", response);
 
   } catch (error) {
-    console.error("❌ Email Error:", error.message);
+    console.error("❌ Email Error:", error);
     throw new Error("Email sending failed");
   }
 };

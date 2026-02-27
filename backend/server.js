@@ -18,7 +18,7 @@ const app = express();
 // ✅ DEBUG BREVO ENV
 console.log(
   "BREVO CONFIG:",
-  process.env.BREVO_SMTP_USER ? "LOADED ✅" : "MISSING ❌"
+  process.env.BREVO_API_KEY ? "LOADED ✅" : "MISSING ❌"
 );
 
 

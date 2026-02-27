@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config(); // ⭐ MUST BE FIRST LINE
+dotenv.config(); // MUST BE FIRST
 
 import express from "express";
 import cors from "cors";
@@ -15,10 +15,10 @@ import adminEmailRoutes from "./routes/adminEmailRoutes.js";
 const app = express();
 
 
-// ✅ DEBUG ENV (REMOVE AFTER TEST)
+// ✅ DEBUG BREVO ENV
 console.log(
-  "EMAIL CONFIG:",
-  process.env.EMAIL_USER ? "LOADED ✅" : "MISSING ❌"
+  "BREVO CONFIG:",
+  process.env.BREVO_SMTP_USER ? "LOADED ✅" : "MISSING ❌"
 );
 
 

@@ -13,10 +13,21 @@ import {
   User,
 } from "lucide-react";
 
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
 export default function UserDashboard() {
+
   const [applications, setApplications] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const BASE_URL = "https://careerforge-job-portal.onrender.com";
 
   useEffect(() => {
     loadData();
@@ -55,7 +66,7 @@ export default function UserDashboard() {
 
   const sections = [
     profile?.name,
-    profile?.summary,
+    profile?.profileSummary,
     profile?.skills?.length,
     profile?.education?.length,
     profile?.experience?.length,
@@ -66,28 +77,77 @@ export default function UserDashboard() {
     (sections.filter(Boolean).length / sections.length) * 100
   );
 
+  /* ================= CHART DATA ================= */
+
+  const chartData = [
+    { name: "Pending", value: pending, color: "#facc15" },
+    { name: "Shortlisted", value: shortlisted, color: "#4ade80" },
+    { name: "Rejected", value: rejected, color: "#f87171" },
+  ];
+
   return (
     <UserLayout>
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 p-6 rounded-2xl">
 
         {/* ================= HEADER ================= */}
+
         <div className="bg-white/10 backdrop-blur-xl text-white p-8 rounded-2xl shadow mb-6 flex items-center justify-between border border-white/20">
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-6">
 
-            {/* Avatar */}
-            {profile?.avatar ? (
-              <img
-                src={`http://localhost:5000/${profile.avatar}`}
-                alt="avatar"
-                className="w-20 h-20 rounded-full object-cover border-4 border-white"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold">
-                {profile?.name?.charAt(0)}
+            {/* Animated Profile Ring */}
+            <div className="relative w-24 h-24">
+
+              <svg className="w-24 h-24 rotate-[-90deg]">
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="40"
+                  stroke="white"
+                  strokeOpacity="0.2"
+                  strokeWidth="8"
+                  fill="none"
+                />
+
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="40"
+                  stroke="url(#grad)"
+                  strokeWidth="8"
+                  fill="none"
+                  strokeDasharray={251}
+                  strokeDashoffset={251 - (251 * completion) / 100}
+                  strokeLinecap="round"
+                  className="transition-all duration-1000"
+                />
+
+                <defs>
+                  <linearGradient id="grad">
+                    <stop offset="0%" stopColor="#facc15" />
+                    <stop offset="100%" stopColor="#f97316" />
+                  </linearGradient>
+                </defs>
+              </svg>
+
+              <div className="absolute inset-0 flex items-center justify-center">
+
+                {profile?.avatar ? (
+                  <img
+                    src={`${BASE_URL}/${profile.avatar}`}
+                    alt="avatar"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-white"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center font-bold">
+                    {profile?.name?.charAt(0)}
+                  </div>
+                )}
+
               </div>
-            )}
+
+            </div>
 
             <div>
               <h1 className="text-3xl font-bold">
@@ -97,9 +157,13 @@ export default function UserDashboard() {
               <p className="opacity-80">{profile?.email}</p>
 
               <p className="text-sm mt-2">
-                Profile Completion: <span className="font-semibold">{completion}%</span>
+                Profile Completion:
+                <span className="font-semibold ml-1">
+                  {completion}%
+                </span>
               </p>
             </div>
+
           </div>
 
           <Link
@@ -111,7 +175,9 @@ export default function UserDashboard() {
 
         </div>
 
+
         {/* ================= RESUME ================= */}
+
         <div className="bg-white/10 backdrop-blur-xl p-6 rounded-xl shadow mb-6 flex justify-between items-center border border-white/20 text-white">
 
           <div className="flex items-center gap-4">
@@ -141,7 +207,9 @@ export default function UserDashboard() {
 
         </div>
 
+
         {/* ================= STATS ================= */}
+
         <div className="grid md:grid-cols-4 gap-6 mb-6">
 
           <StatCard title="Total Applied" value={total} icon={<Briefcase />} />
@@ -151,33 +219,68 @@ export default function UserDashboard() {
 
         </div>
 
-        {/* ================= QUICK ACTIONS ================= */}
-        <div className="grid md:grid-cols-3 gap-6 mb-6">
 
-          <ActionCard
-            to="/jobs"
-            icon={<Briefcase />}
-            title="Browse Jobs"
-            desc="Explore opportunities"
-          />
+        {/* ================= CHART + ACTIONS ================= */}
 
-          <ActionCard
-            to="/applications"
-            icon={<FileText />}
-            title="My Applications"
-            desc="Track your applications"
-          />
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
 
-          <ActionCard
-            to="/profile"
-            icon={<User />}
-            title="Complete Profile"
-            desc="Increase hiring chances"
-          />
+          {/* Chart */}
+          <div className="bg-white/10 backdrop-blur-xl p-6 rounded-xl border border-white/20 text-white">
+
+            <h2 className="text-xl font-semibold mb-4">
+              Application Status Overview
+            </h2>
+
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  dataKey="value"
+                  outerRadius={90}
+                  label
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={index} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+
+          </div>
+
+
+          {/* Quick Actions */}
+          <div className="grid gap-4">
+
+            <ActionCard
+              to="/jobs"
+              icon={<Briefcase />}
+              title="Browse Jobs"
+              desc="Explore opportunities"
+            />
+
+            <ActionCard
+              to="/applications"
+              icon={<FileText />}
+              title="My Applications"
+              desc="Track your applications"
+            />
+
+            <ActionCard
+              to="/profile"
+              icon={<User />}
+              title="Complete Profile"
+              desc="Increase hiring chances"
+            />
+
+          </div>
 
         </div>
 
+
         {/* ================= RECENT APPLICATIONS ================= */}
+
         <div className="bg-white/10 backdrop-blur-xl p-6 rounded-xl shadow text-white border border-white/20">
 
           <h2 className="text-xl font-semibold mb-4">

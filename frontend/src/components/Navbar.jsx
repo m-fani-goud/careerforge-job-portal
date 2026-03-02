@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import API from "../services/api";
 
 import {
   Briefcase,
@@ -18,19 +19,25 @@ export default function Navbar() {
 
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const [profile, setProfile] = useState(null);
 
   const token = localStorage.getItem("token");
 
-  const user = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("user"));
-    } catch {
-      return null;
-    }
-  })();
-
-  // ⭐ IMPORTANT — backend URL
+  // ⭐ backend URL
   const BASE_URL = "https://careerforge-job-portal.onrender.com";
+
+  useEffect(() => {
+    if (token) loadProfile();
+  }, [token]);
+
+  const loadProfile = async () => {
+    try {
+      const res = await API.get("/users/profile");
+      setProfile(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const logout = () => {
     localStorage.clear();
@@ -50,18 +57,14 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 md:px-6">
 
         {/* LOGO */}
-        <Link to="/" className="flex items-center gap-2 group">
-
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-2 rounded-xl shadow-lg group-hover:scale-110 transition">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-2 rounded-xl shadow-lg">
             <Briefcase size={18} className="text-black" />
           </div>
-
-          <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-yellow-300 via-white to-yellow-300 bg-[length:200%_auto] bg-clip-text text-transparent animate-[shine_4s_linear_infinite]">
+          <span className="text-xl md:text-2xl font-bold text-white">
             CareerForge
           </span>
-
         </Link>
-
 
         {/* DESKTOP MENU */}
         <div className="hidden md:flex items-center gap-3">
@@ -70,25 +73,16 @@ export default function Navbar() {
             <>
               <Link to="/jobs" className={navItem("/jobs")}>Jobs</Link>
               <Link to="/login" className={navItem("/login")}>Login</Link>
-
-              <Link
-                to="/admin-login"
-                className="flex items-center gap-1 bg-red-500 px-4 py-2 rounded-xl hover:bg-red-600 transition shadow"
-              >
-                <Shield size={16} />
-                Admin
-              </Link>
-
               <Link
                 to="/register"
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-5 py-2 rounded-xl font-semibold hover:scale-105 transition shadow-lg"
+                className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-5 py-2 rounded-xl font-semibold"
               >
                 Register
               </Link>
             </>
           )}
 
-          {token && user?.role === "user" && (
+          {token && (
             <>
               <Link to="/dashboard" className={navItem("/dashboard")}>
                 <LayoutDashboard size={16} /> Dashboard
@@ -103,38 +97,12 @@ export default function Navbar() {
               </Link>
 
               <Link to="/profile" className={navItem("/profile")}>
-                <UserCircle size={16} /> Profile
+                Profile
               </Link>
             </>
           )}
 
-          {token && user?.role === "recruiter" && (
-            <>
-              <Link to="/recruiter-dashboard" className={navItem("/recruiter-dashboard")}>
-                Dashboard
-              </Link>
-
-              <Link to="/post-job" className={navItem("/post-job")}>
-                Post Job
-              </Link>
-
-              <Link to="/posted-jobs" className={navItem("/posted-jobs")}>
-                My Jobs
-              </Link>
-            </>
-          )}
-
-          {token && user?.role === "admin" && (
-            <Link
-              to="/admin-dashboard"
-              className="flex items-center gap-1 bg-red-500 px-4 py-2 rounded-xl shadow hover:bg-red-600"
-            >
-              <Shield size={16} />
-              Admin Panel
-            </Link>
-          )}
         </div>
-
 
         {/* RIGHT SIDE */}
         <div className="flex items-center gap-2 md:gap-3">
@@ -142,36 +110,33 @@ export default function Navbar() {
           {/* AI BUTTON */}
           <button
             onClick={() => alert("AI Assistant Coming Soon 🤖")}
-            className="relative group p-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 shadow-lg hover:scale-110 transition"
+            className="p-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500"
           >
             <Sparkles size={18} className="text-white" />
-            <div className="absolute inset-0 rounded-xl bg-purple-500 blur-lg opacity-40 group-hover:opacity-70 transition"></div>
           </button>
-
 
           {token && (
             <>
               {/* Notifications */}
               <div className="relative p-2 rounded-lg hover:bg-white/10 cursor-pointer">
                 <Bell size={18} />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </div>
 
               {/* Avatar */}
               <div className="hidden md:flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full border border-white/10">
 
-                {user?.avatar ? (
+                {profile?.avatar ? (
                   <img
-                    src={`${BASE_URL}/${user.avatar}`}
+                    src={`${BASE_URL}/${profile.avatar}`}
                     alt="avatar"
-                    className="w-7 h-7 rounded-full object-cover"
+                    className="w-8 h-8 rounded-full object-cover"
                   />
                 ) : (
                   <UserCircle size={18} />
                 )}
 
-                <span className="text-sm font-medium">
-                  {user?.name}
+                <span className="text-sm font-medium text-white">
+                  {profile?.name || "User"}
                 </span>
 
               </div>
@@ -179,7 +144,7 @@ export default function Navbar() {
               {/* Logout */}
               <button
                 onClick={logout}
-                className="hidden md:flex items-center gap-1 bg-red-500 px-4 py-2 rounded-xl hover:bg-red-600 transition shadow"
+                className="hidden md:flex items-center gap-1 bg-red-500 px-4 py-2 rounded-xl hover:bg-red-600"
               >
                 <LogOut size={16} />
                 Logout
@@ -187,7 +152,7 @@ export default function Navbar() {
             </>
           )}
 
-          {/* MOBILE MENU BUTTON */}
+          {/* MOBILE BUTTON */}
           <button
             className="md:hidden p-2 rounded-lg hover:bg-white/10"
             onClick={() => setOpen(!open)}
@@ -199,50 +164,28 @@ export default function Navbar() {
 
       </div>
 
-
       {/* MOBILE DRAWER */}
       {open && (
-        <div className="md:hidden bg-indigo-900/95 backdrop-blur-xl border-t border-white/10 p-4 space-y-3">
+        <div className="md:hidden bg-indigo-900/95 p-4 space-y-3">
 
-          {!token && (
-            <>
-              <Link to="/jobs" className="block py-2">Jobs</Link>
-              <Link to="/login" className="block py-2">Login</Link>
-              <Link to="/register" className="block py-2">Register</Link>
-            </>
-          )}
-
-          {token && user?.role === "user" && (
+          {token && (
             <>
               <Link to="/dashboard" className="block py-2">Dashboard</Link>
               <Link to="/jobs" className="block py-2">Jobs</Link>
               <Link to="/applications" className="block py-2">Applications</Link>
               <Link to="/profile" className="block py-2">Profile</Link>
-            </>
-          )}
 
-          {token && (
-            <button
-              onClick={logout}
-              className="w-full bg-red-500 py-2 rounded-lg mt-2"
-            >
-              Logout
-            </button>
+              <button
+                onClick={logout}
+                className="w-full bg-red-500 py-2 rounded-lg mt-2"
+              >
+                Logout
+              </button>
+            </>
           )}
 
         </div>
       )}
-
-
-      {/* LOGO ANIMATION */}
-      <style>
-        {`
-          @keyframes shine {
-            0% { background-position: 0% }
-            100% { background-position: 200% }
-          }
-        `}
-      </style>
 
     </nav>
   );

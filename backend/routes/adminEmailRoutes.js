@@ -9,13 +9,23 @@ import {
 const router = express.Router();
 
 
-// Approve
+// ======================================================
+// ⭐ RECRUITER APPROVAL FROM EMAIL
+// ======================================================
+
+// Admin clicks approve button from email
+// GET → approve recruiter
 router.get("/approve-email/:token", approveFromEmail);
 
-// Reject page
+
+// ======================================================
+// ⭐ RECRUITER REJECTION FROM EMAIL
+// ======================================================
+
+// Admin opens reject page (form)
 router.get("/reject-email/:token", rejectPage);
 
-// Reject submit
+// Admin submits rejection reason
 router.post("/reject-email/:token", rejectFromEmail);
 
 

@@ -3,7 +3,7 @@ import sendEmail from "../utils/sendEmail.js";
 
 
 // ======================================================
-// GET ALL RECRUITERS (pending + approved + rejected)
+// ⭐ GET ALL RECRUITERS (pending + approved + rejected)
 // ======================================================
 export const getAllRecruiters = async (req, res) => {
   try {
@@ -25,7 +25,7 @@ export const getAllRecruiters = async (req, res) => {
 
 
 // ======================================================
-// GET ONLY PENDING RECRUITERS
+// ⭐ GET ONLY PENDING RECRUITERS
 // ======================================================
 export const getPendingRecruiters = async (req, res) => {
   try {
@@ -48,7 +48,7 @@ export const getPendingRecruiters = async (req, res) => {
 
 
 // ======================================================
-// APPROVE RECRUITER + EMAIL
+// ⭐ APPROVE RECRUITER + EMAIL
 // ======================================================
 export const approveRecruiter = async (req, res) => {
   try {
@@ -69,32 +69,16 @@ export const approveRecruiter = async (req, res) => {
       });
     }
 
-    // Update status
     user.approvalStatus = "approved";
     user.companyVerified = true;
 
     await user.save();
 
     // ================= EMAIL =================
-    const message = `
-      <h2 style="color:green;">🎉 Recruiter Account Approved</h2>
-
-      <p>Hello <b>${user.name}</b>,</p>
-
-      <p>Your recruiter account has been <b>approved</b> successfully.</p>
-
-      <p><b>Company:</b> ${user.companyName || "N/A"}</p>
-
-      <p>You can now login and start posting jobs.</p>
-
-      <br/>
-      <p>Best Regards,<br/>JobPortal Team</p>
-    `;
-
     await sendEmail(
       user.email,
-      "Recruiter Account Approved",
-      message
+      "🎉 Recruiter Account Approved",
+      recruiterApprovedEmail(user)
     );
 
     res.json({
@@ -112,7 +96,7 @@ export const approveRecruiter = async (req, res) => {
 
 
 // ======================================================
-// REJECT RECRUITER + EMAIL + REASON
+// ⭐ REJECT RECRUITER + EMAIL + REASON
 // ======================================================
 export const rejectRecruiter = async (req, res) => {
   try {
@@ -134,32 +118,16 @@ export const rejectRecruiter = async (req, res) => {
       });
     }
 
-    // Update status
     user.approvalStatus = "rejected";
     user.companyVerified = false;
 
     await user.save();
 
     // ================= EMAIL =================
-    const message = `
-      <h2 style="color:red;">❌ Recruiter Request Rejected</h2>
-
-      <p>Hello <b>${user.name}</b>,</p>
-
-      <p>We regret to inform you that your recruiter account request has been rejected.</p>
-
-      <p><b>Reason:</b> ${reason || "Not specified"}</p>
-
-      <p>If you believe this is a mistake, please contact support.</p>
-
-      <br/>
-      <p>Regards,<br/>JobPortal Team</p>
-    `;
-
     await sendEmail(
       user.email,
-      "Recruiter Account Rejected",
-      message
+      "❌ Recruiter Account Rejected",
+      recruiterRejectedEmail(user, reason)
     );
 
     res.json({
@@ -173,9 +141,12 @@ export const rejectRecruiter = async (req, res) => {
     });
   }
 };
-// ============================================
-// GET ADMIN NOTIFICATIONS
-// ============================================
+
+
+
+// ======================================================
+// ⭐ ADMIN NOTIFICATIONS (NEW RECRUITERS)
+// ======================================================
 export const getNotifications = async (req, res) => {
   try {
 
@@ -188,26 +159,109 @@ export const getNotifications = async (req, res) => {
     res.json(recruiters);
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
 
 
-// ============================================
-// MARK NOTIFICATIONS AS READ
-// ============================================
+// ======================================================
+// ⭐ MARK NOTIFICATIONS AS READ
+// ======================================================
 export const markNotificationsRead = async (req, res) => {
   try {
 
     await User.updateMany(
-      { role: "recruiter", approvalStatus: "pending" },
-      { adminNotified: true }
+      {
+        role: "recruiter",
+        approvalStatus: "pending",
+      },
+      {
+        adminNotified: true,
+      }
     );
 
-    res.json({ message: "Notifications marked as read" });
+    res.json({
+      message: "Notifications marked as read",
+    });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
+
+
+
+// ======================================================
+// ⭐ EMAIL TEMPLATES
+// ======================================================
+
+const recruiterApprovedEmail = (user) => `
+<div style="
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+  padding:40px;
+">
+
+  <h2 style="color:#22c55e">🎉 Recruiter Approved</h2>
+
+  <p>Hello <b>${user.name}</b>,</p>
+
+  <p>Your recruiter account has been successfully approved.</p>
+
+  <p><b>Company:</b> ${user.companyName || "N/A"}</p>
+
+  <div style="
+    margin-top:20px;
+    padding:15px;
+    background:#020617;
+    border-radius:8px;
+  ">
+    You can now login and start posting jobs.
+  </div>
+
+  <br/>
+
+  <p style="opacity:0.7">CareerForge Team</p>
+
+</div>
+`;
+
+
+
+const recruiterRejectedEmail = (user, reason) => `
+<div style="
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+  padding:40px;
+">
+
+  <h2 style="color:#ef4444">❌ Request Rejected</h2>
+
+  <p>Hello <b>${user.name}</b>,</p>
+
+  <p>Your recruiter account request has been rejected.</p>
+
+  <p><b>Reason:</b> ${reason || "Not specified"}</p>
+
+  <div style="
+    margin-top:20px;
+    padding:15px;
+    background:#020617;
+    border-radius:8px;
+  ">
+    If you believe this is a mistake, please contact support.
+  </div>
+
+  <br/>
+
+  <p style="opacity:0.7">CareerForge Team</p>
+
+</div>
+`;

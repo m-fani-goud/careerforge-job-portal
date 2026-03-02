@@ -4,9 +4,11 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
 import sendEmail from "../utils/sendEmail.js";
+
 import {
   otpEmailTemplate,
   resetPasswordTemplate,
+  recruiterApprovalTemplate,
 } from "../utils/emailTemplates.js";
 
 
@@ -29,6 +31,7 @@ export const register = async (req, res) => {
 
     const { name, email, password, role, companyName } = req.body;
 
+    // Check existing user
     const exists = await User.findOne({ email });
 
     if (exists) {
@@ -37,10 +40,13 @@ export const register = async (req, res) => {
       });
     }
 
+    // Hash password
     const hashed = await bcrypt.hash(password, 10);
 
+    // OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Recruiter approval token
     const approvalToken = crypto.randomBytes(32).toString("hex");
 
     const user = await User.create({
@@ -65,15 +71,15 @@ export const register = async (req, res) => {
     });
 
 
-    // ================= OTP EMAIL =================
+    // ================= SEND OTP EMAIL =================
     await sendEmail(
       user.email,
-      "Verify Your Email",
+      "Verify Your Email — CareerForge",
       otpEmailTemplate(user.name, otp)
     );
 
 
-    // ================= ADMIN EMAIL (RECRUITER) =================
+    // ================= RECRUITER ADMIN EMAIL =================
     if (role === "recruiter") {
 
       const approveLink =
@@ -82,30 +88,18 @@ export const register = async (req, res) => {
       const rejectLink =
         `${process.env.BASE_URL}/api/admin/reject-email/${approvalToken}`;
 
-      const adminMessage = `
-        <h2>New Recruiter Request</h2>
-
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Company:</b> ${companyName}</p>
-
-        <br/>
-
-        <a href="${approveLink}"
-        style="background:#16a34a;color:white;padding:12px 20px;border-radius:6px;">
-        Approve
-        </a>
-
-        <a href="${rejectLink}"
-        style="background:#dc2626;color:white;padding:12px 20px;border-radius:6px;margin-left:10px;">
-        Reject
-        </a>
-      `;
+      const emailHTML = recruiterApprovalTemplate(
+        name,
+        email,
+        companyName,
+        approveLink,
+        rejectLink
+      );
 
       await sendEmail(
         process.env.ADMIN_EMAIL,
-        "Recruiter Approval Needed",
-        adminMessage
+        "🚀 Recruiter Approval Needed — CareerForge",
+        emailHTML
       );
     }
 
@@ -117,6 +111,7 @@ export const register = async (req, res) => {
 
   } catch (error) {
     console.log("Register Error:", error);
+
     res.status(500).json({
       message: error.message,
     });
@@ -157,7 +152,9 @@ export const verifyEmail = async (req, res) => {
     });
 
   } catch (error) {
+
     console.log("Verify Error:", error);
+
     res.status(500).json({
       message: error.message,
     });
@@ -191,7 +188,7 @@ export const resendOTP = async (req, res) => {
 
     await sendEmail(
       user.email,
-      "OTP Resent",
+      "OTP Resent — CareerForge",
       otpEmailTemplate(user.name, otp)
     );
 
@@ -200,7 +197,9 @@ export const resendOTP = async (req, res) => {
     });
 
   } catch (error) {
+
     console.log("Resend OTP Error:", error);
+
     res.status(500).json({
       message: error.message,
     });
@@ -225,12 +224,14 @@ export const login = async (req, res) => {
       });
     }
 
+    // Email verification check
     if (!user.isVerified) {
       return res.status(400).json({
         message: "Please verify your email first",
       });
     }
 
+    // Recruiter approval check
     if (
       user.role === "recruiter" &&
       user.approvalStatus !== "approved"
@@ -254,7 +255,9 @@ export const login = async (req, res) => {
     });
 
   } catch (error) {
+
     console.log("Login Error:", error);
+
     res.status(500).json({
       message: error.message,
     });
@@ -288,7 +291,7 @@ export const forgotPassword = async (req, res) => {
 
     await sendEmail(
       user.email,
-      "Password Reset OTP",
+      "Password Reset OTP — CareerForge",
       resetPasswordTemplate(user.name, otp)
     );
 
@@ -297,7 +300,9 @@ export const forgotPassword = async (req, res) => {
     });
 
   } catch (error) {
+
     console.log("Forgot Password Error:", error);
+
     res.status(500).json({
       message: error.message,
     });
@@ -339,7 +344,9 @@ export const resetPassword = async (req, res) => {
     });
 
   } catch (error) {
+
     console.log("Reset Error:", error);
+
     res.status(500).json({
       message: error.message,
     });

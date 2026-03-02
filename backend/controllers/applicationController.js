@@ -1,6 +1,7 @@
 import Application from "../models/Application.js";
 import Job from "../models/Job.js";
 import User from "../models/User.js";
+import { createNotification } from "./notificationController.js";
 
 
 // ================= APPLY JOB =================
@@ -9,23 +10,17 @@ export const applyJob = async (req, res) => {
     const { jobId } = req.body;
 
     if (!jobId) {
-      return res.status(400).json({
-        message: "Job ID required",
-      });
+      return res.status(400).json({ message: "Job ID required" });
     }
 
     const job = await Job.findById(jobId);
     if (!job) {
-      return res.status(404).json({
-        message: "Job not found",
-      });
+      return res.status(404).json({ message: "Job not found" });
     }
 
     const user = await User.findById(req.user._id);
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+      return res.status(404).json({ message: "User not found" });
     }
 
     if (!user.resume) {
@@ -54,13 +49,19 @@ export const applyJob = async (req, res) => {
       isWithdrawn: false,
     });
 
+    // ⭐ NOTIFICATION TO RECRUITER
+    await createNotification(
+      job.createdBy,
+      "New Applicant",
+      `${user.name} applied for your job`,
+      "/posted-jobs"
+    );
+
     res.status(201).json(application);
 
   } catch (error) {
     console.log("Apply Error:", error);
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -72,16 +73,14 @@ export const getMyApplications = async (req, res) => {
 
     const apps = await Application.find({
       applicant: req.user._id,
-      isWithdrawn: { $ne: true }
+      isWithdrawn: { $ne: true },
     }).populate("job");
 
     res.json(apps);
 
   } catch (error) {
     console.log("My Apps Error:", error);
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -104,20 +103,20 @@ export const getJobApplicants = async (req, res) => {
 
   } catch (error) {
     console.log("Applicants Error:", error);
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
 
 
-// ================= ⭐ RECRUITER APPLICATIONS (DASHBOARD COUNTS FIX) =================
+// ================= ⭐ RECRUITER APPLICATIONS (DASHBOARD FIXED) =================
 export const getRecruiterApplications = async (req, res) => {
   try {
 
-    // find jobs created by recruiter
-    const jobs = await Job.find({ recruiter: req.user._id });
+    // IMPORTANT: use createdBy (not recruiter)
+    const jobs = await Job.find({
+      createdBy: req.user._id,
+    });
 
     const jobIds = jobs.map(job => job._id);
 
@@ -130,9 +129,7 @@ export const getRecruiterApplications = async (req, res) => {
 
   } catch (error) {
     console.log("Recruiter Apps Error:", error);
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -144,7 +141,8 @@ export const updateApplicationStatus = async (req, res) => {
 
     const { status } = req.body;
 
-    const application = await Application.findById(req.params.id);
+    const application = await Application.findById(req.params.id)
+      .populate("applicant");
 
     if (!application) {
       return res.status(404).json({
@@ -153,16 +151,21 @@ export const updateApplicationStatus = async (req, res) => {
     }
 
     application.status = status;
-
     await application.save();
+
+    // ⭐ NOTIFICATION TO USER
+    await createNotification(
+      application.applicant._id,
+      "Application Update",
+      `Your application was ${status}`,
+      "/applications"
+    );
 
     res.json(application);
 
   } catch (error) {
     console.log("Update Status Error:", error);
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -187,7 +190,6 @@ export const withdrawApplication = async (req, res) => {
     }
 
     application.isWithdrawn = true;
-
     await application.save();
 
     res.json({
@@ -197,9 +199,7 @@ export const withdrawApplication = async (req, res) => {
 
   } catch (error) {
     console.log("Withdraw Error:", error);
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -224,7 +224,6 @@ export const restoreApplication = async (req, res) => {
     }
 
     application.isWithdrawn = false;
-
     await application.save();
 
     res.json({
@@ -234,8 +233,6 @@ export const restoreApplication = async (req, res) => {
 
   } catch (error) {
     console.log("Restore Error:", error);
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };

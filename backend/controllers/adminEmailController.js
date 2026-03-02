@@ -2,13 +2,11 @@ import User from "../models/User.js";
 import sendEmail from "../utils/sendEmail.js";
 
 
-
-// ==============================================
-// APPROVE FROM EMAIL
-// ==============================================
+// ======================================================
+// ⭐ APPROVE RECRUITER FROM EMAIL LINK
+// ======================================================
 export const approveFromEmail = async (req, res) => {
   try {
-
     const { token } = req.params;
 
     const user = await User.findOne({
@@ -17,7 +15,7 @@ export const approveFromEmail = async (req, res) => {
     });
 
     if (!user) {
-      return res.send("<h2>Invalid or expired approval link</h2>");
+      return res.send(getErrorPage("Invalid or expired approval link"));
     }
 
     user.approvalStatus = "approved";
@@ -28,78 +26,91 @@ export const approveFromEmail = async (req, res) => {
 
     await user.save();
 
-
-    // ✅ Notify recruiter
+    // ================= EMAIL TO RECRUITER =================
     await sendEmail(
       user.email,
-      "Recruiter Approved",
-      `
-      <h2>🎉 Congratulations!</h2>
-      <p>Your recruiter account has been approved.</p>
-      <p>You can now login and post jobs.</p>
-      `
+      "🎉 Recruiter Approved",
+      recruiterApprovedTemplate(user.name)
     );
 
-
-    res.send(`
-      <div style="font-family:Arial;text-align:center;padding:40px">
-        <h2 style="color:green">✅ Recruiter Approved Successfully</h2>
-        <p>${user.name} can now access recruiter features.</p>
-      </div>
-    `);
+    res.send(getSuccessPage("Recruiter Approved", `${user.name} can now login and post jobs.`));
 
   } catch (error) {
-    res.send("Server Error");
+    console.log("Approve Error:", error);
+    res.send(getErrorPage("Server Error"));
   }
 };
 
 
 
-// ==============================================
-// REJECT PAGE (FORM)
-// ==============================================
+// ======================================================
+// ⭐ REJECT FORM PAGE
+// ======================================================
 export const rejectPage = async (req, res) => {
 
   const { token } = req.params;
 
   res.send(`
-    <div style="font-family:Arial;padding:40px">
-
+  <html>
+  <head>
+    <title>Reject Recruiter</title>
+    <style>
+      body {
+        font-family: Arial;
+        background: linear-gradient(135deg,#1e293b,#0f172a);
+        color: white;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        height:100vh;
+      }
+      .card {
+        background:#020617;
+        padding:30px;
+        border-radius:12px;
+        width:400px;
+        box-shadow:0 10px 30px rgba(0,0,0,0.5);
+      }
+      textarea {
+        width:100%;
+        height:120px;
+        border-radius:8px;
+        padding:10px;
+        margin-top:10px;
+      }
+      button {
+        background:#ef4444;
+        color:white;
+        border:none;
+        padding:12px;
+        border-radius:8px;
+        width:100%;
+        margin-top:15px;
+        cursor:pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
       <h2>Reject Recruiter</h2>
-
       <form method="POST" action="/api/admin/reject-email/${token}">
-
-        <label>Reason:</label><br/>
-
-        <textarea name="reason"
-          style="width:300px;height:100px"
-          required></textarea><br/><br/>
-
-        <button
-          style="
-            background:red;
-            color:white;
-            padding:10px 20px;
-            border:none;
-            border-radius:6px;
-          ">
-          Reject Recruiter
-        </button>
-
+        <label>Reason</label>
+        <textarea name="reason" required></textarea>
+        <button type="submit">Reject Recruiter</button>
       </form>
-
     </div>
+  </body>
+  </html>
   `);
 };
 
 
 
-// ==============================================
-// REJECT FROM EMAIL
-// ==============================================
+// ======================================================
+// ⭐ REJECT RECRUITER FROM EMAIL
+// ======================================================
 export const rejectFromEmail = async (req, res) => {
   try {
-
     const { token } = req.params;
     const { reason } = req.body;
 
@@ -109,7 +120,7 @@ export const rejectFromEmail = async (req, res) => {
     });
 
     if (!user) {
-      return res.send("<h2>Invalid or expired link</h2>");
+      return res.send(getErrorPage("Invalid or expired link"));
     }
 
     user.approvalStatus = "rejected";
@@ -119,29 +130,106 @@ export const rejectFromEmail = async (req, res) => {
 
     await user.save();
 
-
-    // ✅ Notify recruiter
+    // ================= EMAIL TO RECRUITER =================
     await sendEmail(
       user.email,
       "Recruiter Request Rejected",
-      `
-      <h2>Recruiter Request Rejected</h2>
-
-      <p>We are sorry, your recruiter request was rejected.</p>
-
-      <p><b>Reason:</b> ${reason}</p>
-      `
+      recruiterRejectedTemplate(user.name, reason)
     );
 
-
-    res.send(`
-      <div style="font-family:Arial;text-align:center;padding:40px">
-        <h2 style="color:red">❌ Recruiter Rejected</h2>
-        <p>${user.name} has been notified.</p>
-      </div>
-    `);
+    res.send(getErrorPage(`${user.name} has been rejected and notified.`));
 
   } catch (error) {
-    res.send("Server Error");
+    console.log("Reject Error:", error);
+    res.send(getErrorPage("Server Error"));
   }
 };
+
+
+
+// ======================================================
+// ⭐ EMAIL TEMPLATES
+// ======================================================
+
+const recruiterApprovedTemplate = (name) => `
+<div style="font-family:Arial;background:#0f172a;color:white;padding:30px">
+  <h2 style="color:#22c55e">🎉 Congratulations ${name}</h2>
+  <p>Your recruiter account has been approved.</p>
+  <p>You can now login and post jobs.</p>
+</div>
+`;
+
+const recruiterRejectedTemplate = (name, reason) => `
+<div style="font-family:Arial;background:#0f172a;color:white;padding:30px">
+  <h2 style="color:#ef4444">❌ Request Rejected</h2>
+  <p>Hello ${name},</p>
+  <p>Your recruiter request was rejected.</p>
+  <p><b>Reason:</b> ${reason}</p>
+</div>
+`;
+
+
+
+// ======================================================
+// ⭐ SUCCESS / ERROR PAGES
+// ======================================================
+
+const getSuccessPage = (title, message) => `
+<html>
+<head>
+<style>
+body{
+  font-family:Arial;
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.card{
+  background:#020617;
+  padding:40px;
+  border-radius:12px;
+  text-align:center;
+}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h2 style="color:#22c55e">✅ ${title}</h2>
+    <p>${message}</p>
+  </div>
+</body>
+</html>
+`;
+
+const getErrorPage = (message) => `
+<html>
+<head>
+<style>
+body{
+  font-family:Arial;
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.card{
+  background:#020617;
+  padding:40px;
+  border-radius:12px;
+  text-align:center;
+}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h2 style="color:#ef4444">⚠️ Error</h2>
+    <p>${message}</p>
+  </div>
+</body>
+</html>
+`;

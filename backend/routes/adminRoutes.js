@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getAllRecruiters,
+  getPendingRecruiters,
   approveRecruiter,
   rejectRecruiter,
   getNotifications,
@@ -12,29 +13,36 @@ import { adminAuth } from "../middleware/adminMiddleware.js";
 const router = express.Router();
 
 
-// ======================================
-// GET ALL RECRUITERS
-// ======================================
+// ======================================================
+// ⭐ RECRUITERS
+// ======================================================
+
+// Get all recruiters (approved + rejected + pending)
 router.get("/recruiters", adminAuth, getAllRecruiters);
 
-
-// ======================================
-// APPROVE RECRUITER
-// ======================================
-router.put("/approve/:id", adminAuth, approveRecruiter);
+// Get only pending recruiters
+router.get("/recruiters/pending", adminAuth, getPendingRecruiters);
 
 
-// ======================================
-// REJECT RECRUITER
-// ======================================
-router.put("/reject/:id", adminAuth, rejectRecruiter);
+// ======================================================
+// ⭐ APPROVAL ACTIONS
+// ======================================================
+
+// Approve recruiter
+router.put("/recruiters/:id/approve", adminAuth, approveRecruiter);
+
+// Reject recruiter
+router.put("/recruiters/:id/reject", adminAuth, rejectRecruiter);
 
 
-// ======================================
-// ADMIN NOTIFICATIONS
-// ======================================
+// ======================================================
+// ⭐ ADMIN NOTIFICATIONS
+// ======================================================
+
+// Get new recruiter notifications
 router.get("/notifications", adminAuth, getNotifications);
 
+// Mark notifications as read
 router.put("/notifications/read", adminAuth, markNotificationsRead);
 
 

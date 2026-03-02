@@ -11,6 +11,7 @@ import applicationRoutes from "./routes/applicationRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import adminEmailRoutes from "./routes/adminEmailRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use("/api/jobs", jobRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminEmailRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 
 // ================= HEALTH CHECK =================

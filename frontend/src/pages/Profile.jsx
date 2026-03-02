@@ -3,26 +3,21 @@ import API from "../services/api";
 import Confetti from "react-confetti";
 
 import {
-  User,
   Mail,
   Phone,
   MapPin,
   Plus,
   Save,
-  Briefcase,
-  GraduationCap,
-  Award,
   Trash2,
-  Upload,
   Camera,
-  Sparkles,
 } from "lucide-react";
 
 export default function Profile() {
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [skillInput, setSkillInput] = useState("");
   const [resumeFile, setResumeFile] = useState(null);
+  const [skillInput, setSkillInput] = useState("");
 
   useEffect(() => {
     loadProfile();
@@ -39,15 +34,16 @@ export default function Profile() {
   const calculateScore = () => {
     let score = 0;
 
-    if (user?.name) score += 10;
     if (user?.phone) score += 10;
-    if (user?.summary) score += 20;
+    if (user?.location) score += 10;
+    if (user?.linkedin) score += 10;
+    if (user?.profileSummary) score += 15;
     if (user?.skills?.length) score += 15;
     if (user?.education?.length) score += 15;
     if (user?.experience?.length) score += 15;
-    if (user?.resume) score += 15;
+    if (user?.resume) score += 10;
 
-    return score;
+    return Math.min(score, 100);
   };
 
   const score = calculateScore();
@@ -74,7 +70,6 @@ export default function Profile() {
     formData.append("avatar", file);
 
     const res = await API.post("/users/upload-avatar", formData);
-
     setUser({ ...user, avatar: res.data.avatar });
   };
 
@@ -85,7 +80,6 @@ export default function Profile() {
     formData.append("resume", resumeFile);
 
     const res = await API.post("/users/upload-resume", formData);
-
     setUser({ ...user, resume: res.data.resume });
   };
 
@@ -127,54 +121,20 @@ export default function Profile() {
 
       {/* ================= HEADER ================= */}
 
-      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-2xl hover:scale-[1.01] transition">
+      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-2xl">
 
-        {/* Avatar with Ring */}
         <div className="relative">
 
-          <div className="absolute inset-0 rounded-full bg-indigo-500 blur-xl opacity-40 animate-pulse"></div>
-
-          <svg className="w-28 h-28 rotate-[-90deg]">
-            <circle
-              cx="56"
-              cy="56"
-              r="48"
-              stroke="white"
-              strokeOpacity="0.2"
-              strokeWidth="6"
-              fill="none"
+          {user.avatar ? (
+            <img
+              src={`${import.meta.env.VITE_API_URL}/${user.avatar}`}
+              className="w-28 h-28 rounded-full object-cover border-2 border-indigo-400"
             />
-            <circle
-              cx="56"
-              cy="56"
-              r="48"
-              stroke="url(#grad)"
-              strokeWidth="6"
-              fill="none"
-              strokeDasharray={300}
-              strokeDashoffset={300 - (300 * score) / 100}
-              strokeLinecap="round"
-            />
-            <defs>
-              <linearGradient id="grad">
-                <stop offset="0%" stopColor="#facc15" />
-                <stop offset="100%" stopColor="#f97316" />
-              </linearGradient>
-            </defs>
-          </svg>
-
-          <div className="absolute inset-0 flex items-center justify-center">
-            {user.avatar ? (
-              <img
-                src={`${import.meta.env.VITE_API_URL}/${user.avatar}`}
-                className="w-20 h-20 rounded-full object-cover border-2 border-indigo-400"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-bold">
-                {user.name?.charAt(0)}
-              </div>
-            )}
-          </div>
+          ) : (
+            <div className="w-28 h-28 rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-bold">
+              {user.name?.charAt(0)}
+            </div>
+          )}
 
           <label className="absolute bottom-0 right-0 bg-white text-black p-2 rounded-full cursor-pointer">
             <input
@@ -187,7 +147,6 @@ export default function Profile() {
 
         </div>
 
-        {/* Info */}
         <div className="flex-1">
 
           <h1 className="text-2xl font-bold">{user.name}</h1>
@@ -196,16 +155,7 @@ export default function Profile() {
             <Mail size={14} /> {user.email}
           </p>
 
-          <p className="flex items-center gap-2 text-gray-300">
-            <Phone size={14} /> {user.phone || "Add phone"}
-          </p>
-
-          <p className="flex items-center gap-2 text-gray-300">
-            <MapPin size={14} /> {user.location || "Add location"}
-          </p>
-
-          {/* Badge */}
-          <div className="mt-3 inline-block bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-semibold">
+          <div className="mt-3 bg-yellow-400 text-black px-3 py-1 rounded-full inline-block text-xs">
             Profile {score}% Complete
           </div>
 
@@ -213,16 +163,95 @@ export default function Profile() {
 
       </div>
 
+      {/* ================= BASIC INFO ================= */}
+
+      <GlassCard title="Basic Information">
+
+        <input
+          className={input}
+          placeholder="Phone"
+          value={user.phone || ""}
+          onChange={(e) => setUser({ ...user, phone: e.target.value })}
+        />
+
+        <input
+          className={input}
+          placeholder="Location"
+          value={user.location || ""}
+          onChange={(e) => setUser({ ...user, location: e.target.value })}
+        />
+
+        <input
+          className={input}
+          placeholder="LinkedIn"
+          value={user.linkedin || ""}
+          onChange={(e) => setUser({ ...user, linkedin: e.target.value })}
+        />
+
+        <input
+          className={input}
+          placeholder="Portfolio"
+          value={user.portfolio || ""}
+          onChange={(e) => setUser({ ...user, portfolio: e.target.value })}
+        />
+
+      </GlassCard>
+
+      {/* ================= CAREER INFO ================= */}
+
+      <GlassCard title="Career Information">
+
+        <input
+          className={input}
+          placeholder="Headline (Frontend Developer)"
+          value={user.headline || ""}
+          onChange={(e) => setUser({ ...user, headline: e.target.value })}
+        />
+
+        <input
+          className={input}
+          placeholder="Current Company"
+          value={user.currentCompany || ""}
+          onChange={(e) =>
+            setUser({ ...user, currentCompany: e.target.value })
+          }
+        />
+
+        <input
+          className={input}
+          placeholder="Total Experience"
+          value={user.totalExperience || ""}
+          onChange={(e) =>
+            setUser({ ...user, totalExperience: e.target.value })
+          }
+        />
+
+        <input
+          className={input}
+          placeholder="Expected Salary"
+          value={user.expectedSalary || ""}
+          onChange={(e) =>
+            setUser({ ...user, expectedSalary: e.target.value })
+          }
+        />
+
+      </GlassCard>
+
       {/* ================= SUMMARY ================= */}
 
       <GlassCard title="Professional Summary">
+
         <textarea
           className={input}
           value={user.profileSummary || ""}
           onChange={(e) =>
-            setUser({ ...user, summary: e.target.value })
+            setUser({
+              ...user,
+              profileSummary: e.target.value,
+            })
           }
         />
+
       </GlassCard>
 
       {/* ================= SKILLS ================= */}
@@ -263,12 +292,8 @@ export default function Profile() {
       <DynamicSection
         title="Education"
         field="education"
-        user={user}
-        setUser={setUser}
-        input={input}
-        addItem={addItem}
-        removeItem={removeItem}
         template={{ degree: "", college: "", year: "" }}
+        {...{ user, setUser, input, addItem, removeItem }}
       />
 
       {/* ================= EXPERIENCE ================= */}
@@ -276,30 +301,13 @@ export default function Profile() {
       <DynamicSection
         title="Experience"
         field="experience"
-        user={user}
-        setUser={setUser}
-        input={input}
-        addItem={addItem}
-        removeItem={removeItem}
         template={{
           title: "",
           company: "",
           duration: "",
           description: "",
         }}
-      />
-
-      {/* ================= CERTIFICATIONS ================= */}
-
-      <DynamicSection
-        title="Certifications"
-        field="certifications"
-        user={user}
-        setUser={setUser}
-        input={input}
-        addItem={addItem}
-        removeItem={removeItem}
-        template={{ name: "", issuer: "" }}
+        {...{ user, setUser, input, addItem, removeItem }}
       />
 
       {/* ================= INTERNSHIPS ================= */}
@@ -307,12 +315,26 @@ export default function Profile() {
       <DynamicSection
         title="Internships"
         field="internships"
-        user={user}
-        setUser={setUser}
-        input={input}
-        addItem={addItem}
-        removeItem={removeItem}
-        template={{ role: "", company: "" }}
+        template={{
+          role: "",
+          company: "",
+          duration: "",
+          description: "",
+        }}
+        {...{ user, setUser, input, addItem, removeItem }}
+      />
+
+      {/* ================= CERTIFICATIONS ================= */}
+
+      <DynamicSection
+        title="Certifications"
+        field="certifications"
+        template={{
+          name: "",
+          organization: "",
+          year: "",
+        }}
+        {...{ user, setUser, input, addItem, removeItem }}
       />
 
       {/* ================= ACHIEVEMENTS ================= */}
@@ -320,12 +342,12 @@ export default function Profile() {
       <DynamicSection
         title="Achievements"
         field="achievements"
-        user={user}
-        setUser={setUser}
-        input={input}
-        addItem={addItem}
-        removeItem={removeItem}
-        template={{ title: "" }}
+        template={{
+          title: "",
+          description: "",
+          year: "",
+        }}
+        {...{ user, setUser, input, addItem, removeItem }}
       />
 
       {/* ================= RESUME ================= */}
@@ -349,6 +371,7 @@ export default function Profile() {
       {/* SAVE */}
 
       <div className="flex justify-end mt-6">
+
         <button
           onClick={updateProfile}
           className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-3 rounded-xl flex items-center gap-2"
@@ -356,6 +379,7 @@ export default function Profile() {
           <Save size={18} />
           Save Profile
         </button>
+
       </div>
 
     </div>
@@ -366,7 +390,7 @@ export default function Profile() {
 
 function GlassCard({ title, children }) {
   return (
-    <div className="mt-6 backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 space-y-3 hover:scale-[1.01] transition">
+    <div className="mt-6 backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 space-y-3">
       <h2 className="font-semibold text-lg">{title}</h2>
       {children}
     </div>

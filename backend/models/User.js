@@ -49,17 +49,34 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    // ================= CAREER INFO =================
+    headline: {
+      type: String,
+      default: "",
+    },
+
+    currentCompany: {
+      type: String,
+      default: "",
+    },
+
+    totalExperience: {
+      type: String,
+      default: "",
+    },
+
+    expectedSalary: {
+      type: String,
+      default: "",
+    },
+
     // ================= PROFILE =================
     profileSummary: {
       type: String,
       default: "",
     },
 
-    skills: [
-      {
-        type: String,
-      },
-    ],
+    skills: [String],
 
     // ================= EDUCATION =================
     education: [

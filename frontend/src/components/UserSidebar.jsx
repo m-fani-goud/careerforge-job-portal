@@ -25,6 +25,8 @@ export default function UserSidebar() {
   const [profile, setProfile] = useState(null);
   const [applications, setApplications] = useState([]);
 
+  const BASE_URL = "https://careerforge-job-portal.onrender.com";
+
   const user = (() => {
     try {
       return JSON.parse(localStorage.getItem("user"));
@@ -61,7 +63,10 @@ export default function UserSidebar() {
 
   const sections = [
     profile?.name,
-    profile?.summary,
+    profile?.phone,
+    profile?.location,
+    profile?.linkedin,
+    profile?.profileSummary,
     profile?.skills?.length,
     profile?.education?.length,
     profile?.experience?.length,
@@ -192,7 +197,7 @@ export default function UserSidebar() {
 
                     {profile?.avatar ? (
                       <img
-                        src={`http://localhost:5000/${profile.avatar}`}
+                        src={`${BASE_URL}/${profile.avatar}`}
                         alt="avatar"
                         className="w-12 h-12 rounded-full object-cover"
                       />

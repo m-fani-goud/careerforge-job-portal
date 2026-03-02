@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 
 export default function Navbar() {
-  const location = useLocation();
 
+  const location = useLocation();
   const [open, setOpen] = useState(false);
 
   const token = localStorage.getItem("token");
@@ -28,6 +28,9 @@ export default function Navbar() {
       return null;
     }
   })();
+
+  // ⭐ IMPORTANT — backend URL
+  const BASE_URL = "https://careerforge-job-portal.onrender.com";
 
   const logout = () => {
     localStorage.clear();
@@ -46,7 +49,7 @@ export default function Navbar() {
 
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 md:px-6">
 
-        {/* ================= LOGO ================= */}
+        {/* LOGO */}
         <Link to="/" className="flex items-center gap-2 group">
 
           <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-2 rounded-xl shadow-lg group-hover:scale-110 transition">
@@ -60,7 +63,7 @@ export default function Navbar() {
         </Link>
 
 
-        {/* ================= DESKTOP MENU ================= */}
+        {/* DESKTOP MENU */}
         <div className="hidden md:flex items-center gap-3">
 
           {!token && (
@@ -133,7 +136,7 @@ export default function Navbar() {
         </div>
 
 
-        {/* ================= RIGHT SIDE ================= */}
+        {/* RIGHT SIDE */}
         <div className="flex items-center gap-2 md:gap-3">
 
           {/* AI BUTTON */}
@@ -156,18 +159,21 @@ export default function Navbar() {
 
               {/* Avatar */}
               <div className="hidden md:flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full border border-white/10">
+
                 {user?.avatar ? (
                   <img
-                    src={`http://localhost:5000/${user.avatar}`}
+                    src={`${BASE_URL}/${user.avatar}`}
                     alt="avatar"
                     className="w-7 h-7 rounded-full object-cover"
                   />
                 ) : (
                   <UserCircle size={18} />
                 )}
+
                 <span className="text-sm font-medium">
                   {user?.name}
                 </span>
+
               </div>
 
               {/* Logout */}
@@ -194,8 +200,7 @@ export default function Navbar() {
       </div>
 
 
-      {/* ================= MOBILE DRAWER ================= */}
-
+      {/* MOBILE DRAWER */}
       {open && (
         <div className="md:hidden bg-indigo-900/95 backdrop-blur-xl border-t border-white/10 p-4 space-y-3">
 
@@ -213,14 +218,6 @@ export default function Navbar() {
               <Link to="/jobs" className="block py-2">Jobs</Link>
               <Link to="/applications" className="block py-2">Applications</Link>
               <Link to="/profile" className="block py-2">Profile</Link>
-            </>
-          )}
-
-          {token && user?.role === "recruiter" && (
-            <>
-              <Link to="/recruiter-dashboard" className="block py-2">Dashboard</Link>
-              <Link to="/post-job" className="block py-2">Post Job</Link>
-              <Link to="/posted-jobs" className="block py-2">My Jobs</Link>
             </>
           )}
 

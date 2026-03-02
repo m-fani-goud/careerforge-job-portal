@@ -18,14 +18,14 @@ export default function Applicants() {
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ⭐ IMPORTANT — backend URL
+  // ⭐ Backend URL
   const BASE_URL = "https://careerforge-job-portal.onrender.com";
 
   const fetchApplicants = async () => {
     try {
       setLoading(true);
 
-      const res = await API.get(/applications/job/${jobId});
+      const res = await API.get(`/applications/job/${jobId}`);
       setApps(res.data);
 
     } catch (err) {
@@ -42,7 +42,7 @@ export default function Applicants() {
 
   const updateStatus = async (id, status) => {
     try {
-      await API.put(/applications/${id}, { status });
+      await API.put(`/applications/${id}`, { status });
       fetchApplicants();
     } catch (err) {
       console.log(err);
@@ -109,7 +109,7 @@ export default function Applicants() {
 
               {app.applicant?.avatar ? (
                 <img
-                  src={${BASE_URL}/${app.applicant.avatar}}
+                  src={`${BASE_URL}/${app.applicant.avatar}`}
                   alt="avatar"
                   className="w-14 h-14 rounded-full object-cover border"
                 />
@@ -137,7 +137,7 @@ export default function Applicants() {
             <div className="mb-4">
 
               <span
-                className={px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 w-fit ${getStatusBadge(app.status)}}
+                className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 w-fit ${getStatusBadge(app.status)}`}
               >
                 {app.status === "shortlisted" && <CheckCircle size={14} />}
                 {app.status === "rejected" && <XCircle size={14} />}
@@ -151,7 +151,7 @@ export default function Applicants() {
             {/* RESUME */}
             {app.applicant?.resume && (
               <a
-                href={${BASE_URL}/${app.applicant.resume}}
+                href={`${BASE_URL}/${app.applicant.resume}`}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-2 text-indigo-600 font-medium mb-4 hover:underline"

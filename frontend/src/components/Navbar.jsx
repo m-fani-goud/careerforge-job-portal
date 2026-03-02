@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import API from "../services/api";
 
 import {
   Briefcase,
@@ -12,6 +13,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  Sparkles,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -20,6 +22,9 @@ export default function Navbar() {
 
   const [open, setOpen] = useState(false);
   const [dropdown, setDropdown] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [notifications, setNotifications] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -32,48 +37,92 @@ export default function Navbar() {
 
   const BASE_URL = "https://careerforge-job-portal.onrender.com";
 
+  // ================= LOAD DATA =================
+
+  useEffect(() => {
+    if (token) {
+      loadProfile();
+      loadNotifications();
+    }
+  }, [token]);
+
+  const loadProfile = async () => {
+    try {
+      const res = await API.get("/users/profile");
+      setProfile(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const loadNotifications = async () => {
+    try {
+      const res = await API.get("/applications/me");
+      setNotifications(res.data.length || 0);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // ================= SCROLL EFFECT =================
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const logout = () => {
     localStorage.clear();
     window.location.href = "/";
   };
 
+  // ================= NAV STYLE =================
+
   const navItem = (path) =>
-    `flex items-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 font-medium ${
+    `relative px-4 py-2 font-medium transition ${
       location.pathname === path
-        ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-black shadow"
-        : "hover:bg-white/10 text-white/90 hover:text-white"
+        ? "text-yellow-300"
+        : "text-white/80 hover:text-white"
     }`;
+
+  const underline = (path) =>
+    location.pathname === path
+      ? "scale-x-100"
+      : "scale-x-0 group-hover:scale-x-100";
 
   // ================= ROLE BADGE =================
 
-  const roleBadge = () => {
-    if (role === "admin") return "bg-red-500";
-    if (role === "recruiter") return "bg-purple-500";
-    if (role === "user") return "bg-green-500";
-    return "bg-gray-500";
-  };
+  const roleColor =
+    role === "admin"
+      ? "bg-red-500"
+      : role === "recruiter"
+      ? "bg-purple-500"
+      : "bg-green-500";
 
-  // ================= MENU =================
+  // ================= ROLE MENU =================
 
   const renderMenu = () => {
 
     if (!token) {
       return (
         <>
-          <Link to="/jobs" className={navItem("/jobs")}>Jobs</Link>
+          <NavLink to="/jobs" label="Jobs" />
+          <NavLink to="/login" label="Login" />
 
           <Link
             to="/admin-login"
-            className="flex items-center gap-1 bg-red-500 px-4 py-2 rounded-xl shadow"
+            className="bg-red-500 px-4 py-2 rounded-xl"
           >
-            <Shield size={16} /> Admin
+            Admin
           </Link>
-
-          <Link to="/login" className={navItem("/login")}>Login</Link>
 
           <Link
             to="/register"
-            className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-5 py-2 rounded-xl font-semibold shadow"
+            className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-5 py-2 rounded-xl font-semibold"
           >
             Register
           </Link>
@@ -84,21 +133,10 @@ export default function Navbar() {
     if (role === "user") {
       return (
         <>
-          <Link to="/dashboard" className={navItem("/dashboard")}>
-            <LayoutDashboard size={16} /> Dashboard
-          </Link>
-
-          <Link to="/jobs" className={navItem("/jobs")}>
-            <Briefcase size={16} /> Jobs
-          </Link>
-
-          <Link to="/applications" className={navItem("/applications")}>
-            <FileText size={16} /> Applications
-          </Link>
-
-          <Link to="/profile" className={navItem("/profile")}>
-            <UserCircle size={16} /> Profile
-          </Link>
+          <NavLink to="/dashboard" label="Dashboard" />
+          <NavLink to="/jobs" label="Jobs" />
+          <NavLink to="/applications" label="Applications" />
+          <NavLink to="/profile" label="Profile" />
         </>
       );
     }
@@ -106,80 +144,87 @@ export default function Navbar() {
     if (role === "recruiter") {
       return (
         <>
-          <Link to="/recruiter-dashboard" className={navItem("/recruiter-dashboard")}>
-            Dashboard
-          </Link>
-
-          <Link to="/posted-jobs" className={navItem("/posted-jobs")}>
-            My Jobs
-          </Link>
-
-          <Link to="/post-job" className={navItem("/post-job")}>
-            Post Job
-          </Link>
+          <NavLink to="/recruiter-dashboard" label="Dashboard" />
+          <NavLink to="/posted-jobs" label="My Jobs" />
+          <NavLink to="/post-job" label="Post Job" />
         </>
       );
     }
 
     if (role === "admin") {
       return (
-        <Link
-          to="/admin-dashboard"
-          className="flex items-center gap-1 bg-red-500 px-4 py-2 rounded-xl shadow"
-        >
-          <Shield size={16} /> Admin Panel
-        </Link>
+        <>
+          <NavLink to="/admin-dashboard" label="Admin Panel" />
+        </>
       );
     }
   };
 
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-gradient-to-r from-indigo-900/90 via-blue-900/90 to-purple-900/90 border-b border-white/10 shadow-2xl">
+    <nav
+      className={`sticky top-0 z-50 transition ${
+        scrolled
+          ? "bg-indigo-900/95 shadow-2xl"
+          : "bg-indigo-900/70"
+      } backdrop-blur-xl border-b border-white/10`}
+    >
 
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 md:px-6">
 
         {/* ================= LOGO ================= */}
+        <Link to="/" className="flex items-center gap-2">
 
-        <Link to="/" className="flex items-center gap-2 group">
-
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-2 rounded-xl shadow-lg group-hover:scale-110 transition">
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-2 rounded-xl shadow">
             <Briefcase size={18} className="text-black" />
           </div>
 
-          <span className="text-xl md:text-2xl font-bold text-white">
+          <span className="text-xl font-bold text-white">
             CareerForge
           </span>
 
         </Link>
 
-        {/* ================= DESKTOP MENU ================= */}
+        {/* ================= CENTER MENU ================= */}
+        <div className="hidden md:flex items-center gap-6 flex-1 justify-center">
 
-        <div className="hidden md:flex items-center gap-3">
           {renderMenu()}
+
         </div>
 
         {/* ================= RIGHT SIDE ================= */}
+        <div className="flex items-center gap-3">
 
-        <div className="flex items-center gap-2 md:gap-3">
+          {/* AI BUTTON */}
+          <button
+            onClick={() => alert("AI Assistant Coming Soon 🤖")}
+            className="relative group p-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 shadow-lg hover:scale-110 transition"
+          >
+            <Sparkles size={18} className="text-white" />
+            <div className="absolute inset-0 rounded-xl bg-purple-500 blur-lg opacity-40 group-hover:opacity-70"></div>
+          </button>
 
           {token && (
             <>
               {/* Notifications */}
               <div className="relative p-2 rounded-lg hover:bg-white/10 cursor-pointer">
                 <Bell size={18} />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                {notifications > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-xs px-1.5 rounded-full">
+                    {notifications}
+                  </span>
+                )}
               </div>
 
-              {/* Avatar Dropdown */}
+              {/* Avatar */}
               <div className="relative">
 
                 <button
                   onClick={() => setDropdown(!dropdown)}
                   className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full border border-white/10 hover:bg-white/20 transition"
                 >
-                  {user?.avatar ? (
+                  {profile?.avatar ? (
                     <img
-                      src={`${BASE_URL}/${user.avatar}`}
+                      src={`${BASE_URL}/${profile.avatar}`}
                       alt="avatar"
                       className="w-8 h-8 rounded-full object-cover"
                     />
@@ -187,32 +232,28 @@ export default function Navbar() {
                     <UserCircle size={20} />
                   )}
 
-                  <span className="text-sm hidden md:block">
-                    {user?.name}
+                  {/* Role Badge */}
+                  <span
+                    className={`text-xs text-white px-2 py-0.5 rounded-full ${roleColor}`}
+                  >
+                    {role}
                   </span>
 
                   <ChevronDown size={14} />
                 </button>
 
-                {/* Dropdown Menu */}
+                {/* Dropdown */}
                 {dropdown && (
-                  <div className="absolute right-0 mt-3 w-48 bg-white text-black rounded-xl shadow-lg overflow-hidden">
+                  <div className="absolute right-0 mt-3 w-44 backdrop-blur-xl bg-white/90 text-black rounded-xl shadow-lg overflow-hidden border animate-fadeIn">
 
-                    <div className="p-3 border-b text-sm">
-                      <p className="font-semibold">{user?.name}</p>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded text-white ${roleBadge()}`}
+                    {role === "user" && (
+                      <Link
+                        to="/profile"
+                        className="block px-4 py-2 hover:bg-gray-100"
                       >
-                        {role}
-                      </span>
-                    </div>
-
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-2 hover:bg-gray-100"
-                    >
-                      Profile
-                    </Link>
+                        Profile
+                      </Link>
+                    )}
 
                     <button
                       onClick={logout}
@@ -229,7 +270,7 @@ export default function Navbar() {
             </>
           )}
 
-          {/* Mobile Button */}
+          {/* MOBILE */}
           <button
             className="md:hidden p-2 rounded-lg hover:bg-white/10"
             onClick={() => setOpen(!open)}
@@ -241,10 +282,9 @@ export default function Navbar() {
 
       </div>
 
-      {/* ================= MOBILE MENU ================= */}
-
+      {/* MOBILE MENU */}
       {open && (
-        <div className="md:hidden bg-indigo-900/95 backdrop-blur-xl border-t border-white/10 p-4 space-y-3">
+        <div className="md:hidden bg-indigo-900/95 p-4 space-y-3">
 
           {renderMenu()}
 
@@ -261,5 +301,30 @@ export default function Navbar() {
       )}
 
     </nav>
+  );
+}
+
+
+/* ================= NAV LINK WITH ANIMATION ================= */
+
+function NavLink({ to, label }) {
+
+  const location = useLocation();
+  const active = location.pathname === to;
+
+  return (
+    <Link
+      to={to}
+      className="group relative px-4 py-2 text-white/80 hover:text-white"
+    >
+      {label}
+
+      {/* Animated underline */}
+      <span
+        className={`absolute left-0 -bottom-1 h-0.5 w-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-transform duration-300 origin-left ${
+          active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+        }`}
+      />
+    </Link>
   );
 }

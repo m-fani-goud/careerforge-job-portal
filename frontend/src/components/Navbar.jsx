@@ -1,9 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
 import NotificationDropdown from "./NotificationDropdown";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import API from "../services/api";
+
 import {
   Briefcase,
-  Bell,
   Sparkles,
   UserCircle,
   LogOut,
@@ -19,15 +20,24 @@ export default function Navbar() {
 
   const token = localStorage.getItem("token");
 
-  const user = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("user"));
-    } catch {
-      return null;
-    }
-  })();
+  const [user, setUser] = useState(null);
 
   const BASE_URL = "https://careerforge-job-portal.onrender.com";
+
+  /* ================= LOAD USER ================= */
+
+  useEffect(() => {
+    if (token) loadUser();
+  }, [token]);
+
+  const loadUser = async () => {
+    try {
+      const res = await API.get("/users/profile");
+      setUser(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const avatarUrl = user?.avatar
     ? `${BASE_URL}/${user.avatar}`
@@ -38,7 +48,7 @@ export default function Navbar() {
     window.location.href = "/";
   };
 
-  /* ================= ACTIVE NAV STYLE ================= */
+  /* ================= ACTIVE NAV ================= */
 
   const navItem = (path) =>
     `px-5 py-2 rounded-xl font-medium transition-all duration-300 ${
@@ -82,14 +92,8 @@ export default function Navbar() {
 
     return (
       <div className="relative">
-
-        <Crown
-          size={18}
-          className="text-yellow-400 animate-bounce"
-        />
-
+        <Crown size={18} className="text-yellow-400 animate-bounce" />
         <div className="absolute inset-0 rounded-full bg-yellow-400 blur-md opacity-40 animate-pulse"></div>
-
       </div>
     );
   };
@@ -150,53 +154,40 @@ export default function Navbar() {
         {/* LOGO */}
 
         <Link to="/" className="flex items-center gap-2 text-white font-bold text-xl">
-
           <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-2 rounded-xl shadow-lg">
             <Briefcase size={18} className="text-black" />
           </div>
-
           CareerForge
-
         </Link>
 
-
-        {/* NAV LINKS */}
+        {/* LINKS */}
 
         <div className="hidden md:flex items-center gap-3 bg-white/5 p-1 rounded-2xl border border-white/10 backdrop-blur-xl">
-
           {renderLinks()}
-
         </div>
 
-
-        {/* RIGHT SIDE */}
+        {/* RIGHT */}
 
         <div className="flex items-center gap-3">
 
-          {/* AI BUTTON */}
-
+          {/* AI */}
           <button
             onClick={aiClick}
             className="relative group p-2 rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 shadow-lg hover:scale-110 transition"
           >
             <Sparkles size={18} className="text-white" />
-
             <div className="absolute inset-0 rounded-xl bg-purple-500 blur-lg opacity-40 group-hover:opacity-70 transition"></div>
           </button>
 
-
-          {token && (
+          {token && user && (
             <>
-              {/* NOTIFICATION */}
-
               <NotificationDropdown />
-
 
               {/* USER INFO */}
 
               <div className="hidden md:flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full border border-white/10">
 
-                {user?.role === "user" && (
+                {user.role === "user" && (
                   avatarUrl ? (
                     <img
                       src={avatarUrl}
@@ -211,17 +202,13 @@ export default function Navbar() {
                 {crownIcon()}
 
                 <div className="flex flex-col leading-tight">
-
                   <span className="text-white text-sm font-medium">
-                    {user?.name}
+                    {user.name}
                   </span>
-
                   {roleBadge()}
-
                 </div>
 
               </div>
-
 
               {/* LOGOUT */}
 
@@ -235,7 +222,7 @@ export default function Navbar() {
             </>
           )}
 
-          {/* MOBILE BUTTON */}
+          {/* MOBILE */}
 
           <button
             className="md:hidden text-white"
@@ -247,7 +234,6 @@ export default function Navbar() {
         </div>
 
       </div>
-
 
       {/* MOBILE MENU */}
 

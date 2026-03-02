@@ -14,7 +14,6 @@ export const applyJob = async (req, res) => {
       });
     }
 
-    // Check job exists
     const job = await Job.findById(jobId);
     if (!job) {
       return res.status(404).json({
@@ -22,7 +21,6 @@ export const applyJob = async (req, res) => {
       });
     }
 
-    // Check user exists
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({
@@ -30,14 +28,12 @@ export const applyJob = async (req, res) => {
       });
     }
 
-    // Resume required
     if (!user.resume) {
       return res.status(400).json({
         message: "Please upload resume before applying",
       });
     }
 
-    // Prevent duplicate
     const alreadyApplied = await Application.findOne({
       job: jobId,
       applicant: req.user._id,
@@ -76,7 +72,7 @@ export const getMyApplications = async (req, res) => {
 
     const apps = await Application.find({
       applicant: req.user._id,
-      isWithdrawn: { $ne: true }   // ⭐ hide withdrawn
+      isWithdrawn: { $ne: true }
     }).populate("job");
 
     res.json(apps);
@@ -94,11 +90,12 @@ export const getMyApplications = async (req, res) => {
 // ================= JOB APPLICANTS (RECRUITER) =================
 export const getJobApplicants = async (req, res) => {
   try {
+
     const { jobId } = req.params;
 
     const apps = await Application.find({
       job: jobId,
-      isWithdrawn: { $ne: true }, // hide withdrawn from recruiter
+      isWithdrawn: { $ne: true },
     })
       .populate("applicant", "name email resume avatar")
       .populate("job");
@@ -107,6 +104,32 @@ export const getJobApplicants = async (req, res) => {
 
   } catch (error) {
     console.log("Applicants Error:", error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+
+
+// ================= ⭐ RECRUITER APPLICATIONS (DASHBOARD COUNTS FIX) =================
+export const getRecruiterApplications = async (req, res) => {
+  try {
+
+    // find jobs created by recruiter
+    const jobs = await Job.find({ recruiter: req.user._id });
+
+    const jobIds = jobs.map(job => job._id);
+
+    const apps = await Application.find({
+      job: { $in: jobIds },
+      isWithdrawn: { $ne: true },
+    }).populate("applicant", "name email");
+
+    res.json(apps);
+
+  } catch (error) {
+    console.log("Recruiter Apps Error:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -157,7 +180,6 @@ export const withdrawApplication = async (req, res) => {
       });
     }
 
-    // Only owner can withdraw
     if (application.applicant.toString() !== req.user._id.toString()) {
       return res.status(401).json({
         message: "Not authorized",
@@ -183,7 +205,7 @@ export const withdrawApplication = async (req, res) => {
 
 
 
-// ================= RESTORE APPLICATION (UNDO) =================
+// ================= RESTORE APPLICATION =================
 export const restoreApplication = async (req, res) => {
   try {
 

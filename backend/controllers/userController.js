@@ -7,7 +7,7 @@ import User from "../models/User.js";
 export const getProfile = async (req, res) => {
   try {
 
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user._id).select("-password");
 
     if (!user) {
       return res.status(404).json({
@@ -27,20 +27,42 @@ export const getProfile = async (req, res) => {
 
 
 // ==========================================
-// UPDATE PROFILE (Skills, Summary, etc.)
+// UPDATE PROFILE
 // ==========================================
 export const updateProfile = async (req, res) => {
   try {
 
-    const userId = req.user.id;
+    const user = await User.findById(req.user._id);
 
-    const updates = req.body;
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      updates,
-      { new: true }
-    ).select("-password");
+    // Only update allowed fields
+    const allowedFields = [
+      "phone",
+      "location",
+      "linkedin",
+      "portfolio",
+      "profileSummary",
+      "skills",
+      "education",
+      "experience",
+      "internships",
+      "projects",
+      "certifications",
+      "achievements",
+    ];
+
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        user[field] = req.body[field];
+      }
+    });
+
+    await user.save();
 
     res.json({
       message: "Profile updated successfully",
@@ -62,15 +84,13 @@ export const updateProfile = async (req, res) => {
 export const uploadResume = async (req, res) => {
   try {
 
-    const userId = req.user.id;
-
     if (!req.file) {
       return res.status(400).json({
         message: "No file uploaded",
       });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({
@@ -97,12 +117,10 @@ export const uploadResume = async (req, res) => {
 
 
 // ==========================================
-// UPLOAD PROFILE IMAGE (AVATAR)
+// UPLOAD AVATAR
 // ==========================================
 export const uploadAvatar = async (req, res) => {
   try {
-
-    const userId = req.user.id;
 
     if (!req.file) {
       return res.status(400).json({
@@ -110,7 +128,13 @@ export const uploadAvatar = async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
 
     user.avatar = req.file.path;
 
@@ -127,13 +151,16 @@ export const uploadAvatar = async (req, res) => {
     });
   }
 };
+
+
+
 // ==========================================
 // REMOVE AVATAR
 // ==========================================
 export const removeAvatar = async (req, res) => {
   try {
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({

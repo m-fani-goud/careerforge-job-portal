@@ -4,7 +4,6 @@ import API from "../services/api";
 import RecruiterLayout from "../components/RecruiterLayout";
 
 import {
-  User,
   Mail,
   FileText,
   CheckCircle,
@@ -13,16 +12,20 @@ import {
 } from "lucide-react";
 
 export default function Applicants() {
+
   const { jobId } = useParams();
 
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // ⭐ IMPORTANT — backend URL
+  const BASE_URL = "https://careerforge-job-portal.onrender.com";
+
   const fetchApplicants = async () => {
     try {
       setLoading(true);
 
-      const res = await API.get(`/applications/job/${jobId}`);
+      const res = await API.get(/applications/job/${jobId});
       setApps(res.data);
 
     } catch (err) {
@@ -39,7 +42,7 @@ export default function Applicants() {
 
   const updateStatus = async (id, status) => {
     try {
-      await API.put(`/applications/${id}`, { status });
+      await API.put(/applications/${id}, { status });
       fetchApplicants();
     } catch (err) {
       console.log(err);
@@ -106,7 +109,7 @@ export default function Applicants() {
 
               {app.applicant?.avatar ? (
                 <img
-                  src={`http://localhost:5000/${app.applicant.avatar}`}
+                  src={${BASE_URL}/${app.applicant.avatar}}
                   alt="avatar"
                   className="w-14 h-14 rounded-full object-cover border"
                 />
@@ -134,20 +137,11 @@ export default function Applicants() {
             <div className="mb-4">
 
               <span
-                className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 w-fit ${getStatusBadge(app.status)}`}
+                className={px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 w-fit ${getStatusBadge(app.status)}}
               >
-                {app.status === "shortlisted" && (
-                  <CheckCircle size={14} />
-                )}
-
-                {app.status === "rejected" && (
-                  <XCircle size={14} />
-                )}
-
-                {app.status === "applied" && (
-                  <Clock size={14} />
-                )}
-
+                {app.status === "shortlisted" && <CheckCircle size={14} />}
+                {app.status === "rejected" && <XCircle size={14} />}
+                {app.status === "applied" && <Clock size={14} />}
                 {app.status}
               </span>
 
@@ -157,7 +151,7 @@ export default function Applicants() {
             {/* RESUME */}
             {app.applicant?.resume && (
               <a
-                href={`http://localhost:5000/${app.applicant.resume}`}
+                href={${BASE_URL}/${app.applicant.resume}}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-2 text-indigo-600 font-medium mb-4 hover:underline"
@@ -172,18 +166,14 @@ export default function Applicants() {
             <div className="flex gap-3">
 
               <button
-                onClick={() =>
-                  updateStatus(app._id, "shortlisted")
-                }
+                onClick={() => updateStatus(app._id, "shortlisted")}
                 className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
               >
                 Shortlist
               </button>
 
               <button
-                onClick={() =>
-                  updateStatus(app._id, "rejected")
-                }
+                onClick={() => updateStatus(app._id, "rejected")}
                 className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition"
               >
                 Reject

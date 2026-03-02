@@ -7,7 +7,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Link as LinkIcon,
   Plus,
   Save,
   Briefcase,
@@ -20,7 +19,6 @@ import {
 } from "lucide-react";
 
 export default function Profile() {
-
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [skillInput, setSkillInput] = useState("");
@@ -36,46 +34,40 @@ export default function Profile() {
     setLoading(false);
   };
 
-  /* ================= AI SCORE ================= */
+  // ================= SCORE =================
 
   const calculateScore = () => {
-
     let score = 0;
-    const tips = [];
 
     if (user?.name) score += 10;
-    else tips.push("Add name");
-
     if (user?.phone) score += 10;
-    else tips.push("Add phone");
-
     if (user?.summary) score += 20;
-    else tips.push("Add summary");
-
-    if (user?.skills?.length) score += 20;
-    else tips.push("Add skills");
-
+    if (user?.skills?.length) score += 15;
     if (user?.education?.length) score += 15;
-    else tips.push("Add education");
-
     if (user?.experience?.length) score += 15;
-    else tips.push("Add experience");
+    if (user?.resume) score += 15;
 
-    if (user?.resume) score += 10;
-    else tips.push("Upload resume");
-
-    return { score, tips };
+    return score;
   };
 
-  const { score, tips } = calculateScore();
+  const score = calculateScore();
 
-  const strength =
-    score >= 85 ? "Excellent"
-      : score >= 70 ? "Strong"
-        : score >= 50 ? "Average"
-          : "Weak";
+  // ================= HELPERS =================
 
-  /* ================= AVATAR ================= */
+  const addItem = (field, obj) => {
+    setUser({
+      ...user,
+      [field]: [...(user[field] || []), obj],
+    });
+  };
+
+  const removeItem = (field, index) => {
+    const arr = [...(user[field] || [])];
+    arr.splice(index, 1);
+    setUser({ ...user, [field]: arr });
+  };
+
+  // ================= AVATAR =================
 
   const uploadAvatar = async (file) => {
     const formData = new FormData();
@@ -86,15 +78,9 @@ export default function Profile() {
     setUser({ ...user, avatar: res.data.avatar });
   };
 
-  const removeAvatar = async () => {
-    await API.delete("/users/remove-avatar");
-    setUser({ ...user, avatar: "" });
-  };
-
-  /* ================= RESUME ================= */
+  // ================= RESUME =================
 
   const uploadResume = async () => {
-
     const formData = new FormData();
     formData.append("resume", resumeFile);
 
@@ -103,14 +89,14 @@ export default function Profile() {
     setUser({ ...user, resume: res.data.resume });
   };
 
-  /* ================= UPDATE ================= */
+  // ================= SAVE =================
 
   const updateProfile = async () => {
     await API.put("/users/profile", user);
     alert("Profile Updated ✅");
   };
 
-  /* ================= SKILLS ================= */
+  // ================= SKILLS =================
 
   const addSkill = () => {
     if (!skillInput) return;
@@ -129,217 +115,119 @@ export default function Profile() {
     setUser({ ...user, skills: arr });
   };
 
-  /* ================= EDUCATION ================= */
-
-  const addEducation = () => {
-    setUser({
-      ...user,
-      education: [
-        ...(user.education || []),
-        { degree: "", college: "", year: "" },
-      ],
-    });
-  };
-
-  const removeEducation = (i) => {
-    const arr = [...user.education];
-    arr.splice(i, 1);
-    setUser({ ...user, education: arr });
-  };
-
-  /* ================= EXPERIENCE ================= */
-
-  const addExperience = () => {
-    setUser({
-      ...user,
-      experience: [
-        ...(user.experience || []),
-        {
-          title: "",
-          company: "",
-          duration: "",
-          description: "",
-        },
-      ],
-    });
-  };
-
-  const removeExperience = (i) => {
-    const arr = [...user.experience];
-    arr.splice(i, 1);
-    setUser({ ...user, experience: arr });
-  };
-
   if (loading || !user) return <div className="p-10">Loading...</div>;
 
   const input =
     "bg-white/10 border border-white/20 p-3 w-full rounded-xl text-white";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-black text-white p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-black text-white p-4 md:p-6">
 
       {score === 100 && <Confetti recycle={false} />}
 
       {/* ================= HEADER ================= */}
 
-      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 flex items-center gap-6 shadow-2xl">
+      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-2xl hover:scale-[1.01] transition">
 
-        <div className="flex flex-col items-center">
+        {/* Avatar with Ring */}
+        <div className="relative">
 
-          <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-indigo-500 blur-xl opacity-40 animate-pulse"></div>
 
+          <svg className="w-28 h-28 rotate-[-90deg]">
+            <circle
+              cx="56"
+              cy="56"
+              r="48"
+              stroke="white"
+              strokeOpacity="0.2"
+              strokeWidth="6"
+              fill="none"
+            />
+            <circle
+              cx="56"
+              cy="56"
+              r="48"
+              stroke="url(#grad)"
+              strokeWidth="6"
+              fill="none"
+              strokeDasharray={300}
+              strokeDashoffset={300 - (300 * score) / 100}
+              strokeLinecap="round"
+            />
+            <defs>
+              <linearGradient id="grad">
+                <stop offset="0%" stopColor="#facc15" />
+                <stop offset="100%" stopColor="#f97316" />
+              </linearGradient>
+            </defs>
+          </svg>
+
+          <div className="absolute inset-0 flex items-center justify-center">
             {user.avatar ? (
               <img
-                src={`http://localhost:5000/${user.avatar}`}
-                className="w-28 h-28 rounded-full object-cover border-4 border-indigo-400"
+                src={`${import.meta.env.VITE_API_URL}/${user.avatar}`}
+                className="w-20 h-20 rounded-full object-cover border-2 border-indigo-400"
               />
             ) : (
-              <div className="w-28 h-28 rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-bold">
+              <div className="w-20 h-20 rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-bold">
                 {user.name?.charAt(0)}
               </div>
             )}
-
-            <label className="absolute bottom-0 right-0 bg-white text-black p-2 rounded-full cursor-pointer">
-              <input
-                type="file"
-                hidden
-                onChange={(e) => uploadAvatar(e.target.files[0])}
-              />
-              <Camera size={16} />
-            </label>
-
           </div>
 
-          {user.avatar && (
-            <button
-              onClick={removeAvatar}
-              className="mt-2 text-xs bg-red-500 px-3 py-1 rounded-full"
-            >
-              Remove
-            </button>
-          )}
+          <label className="absolute bottom-0 right-0 bg-white text-black p-2 rounded-full cursor-pointer">
+            <input
+              type="file"
+              hidden
+              onChange={(e) => uploadAvatar(e.target.files[0])}
+            />
+            <Camera size={16} />
+          </label>
 
         </div>
 
-        <div>
+        {/* Info */}
+        <div className="flex-1">
 
-          <h1 className="text-3xl font-bold">{user.name}</h1>
+          <h1 className="text-2xl font-bold">{user.name}</h1>
 
-          <p className="text-gray-300 flex gap-2 items-center">
-            <Mail size={16} />
-            {user.email}
+          <p className="flex items-center gap-2 text-gray-300">
+            <Mail size={14} /> {user.email}
           </p>
 
-          <p className="text-gray-300 flex gap-2 items-center">
-            <Phone size={16} />
-            {user.phone || "Add phone"}
+          <p className="flex items-center gap-2 text-gray-300">
+            <Phone size={14} /> {user.phone || "Add phone"}
           </p>
 
-          <p className="text-gray-300 flex gap-2 items-center">
-            <MapPin size={16} />
-            {user.location || "Add location"}
+          <p className="flex items-center gap-2 text-gray-300">
+            <MapPin size={14} /> {user.location || "Add location"}
           </p>
 
-          {/* AI Score */}
-          <div className="mt-4">
-
-            <div className="flex items-center gap-2">
-              <Sparkles className="text-yellow-400" />
-              <span>AI Strength: {strength}</span>
-            </div>
-
-            <div className="w-64 bg-white/20 rounded-full h-3 mt-2">
-              <div
-                className="bg-gradient-to-r from-pink-500 to-indigo-400 h-3 rounded-full"
-                style={{ width: `${score}%` }}
-              />
-            </div>
-
-            <p className="text-sm">{score}/100</p>
-
+          {/* Badge */}
+          <div className="mt-3 inline-block bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-semibold">
+            Profile {score}% Complete
           </div>
 
         </div>
 
       </div>
 
-      {/* ================= TIPS ================= */}
-
-      {tips.length > 0 && (
-        <div className="mt-6 bg-yellow-500/10 border border-yellow-400/20 rounded-2xl p-5">
-
-          <h3 className="font-semibold mb-2">
-            Improve your profile 🚀
-          </h3>
-
-          <ul className="text-sm space-y-1">
-            {tips.map((tip, i) => (
-              <li key={i}>• {tip}</li>
-            ))}
-          </ul>
-
-        </div>
-      )}
-
-      {/* ================= BASIC INFO ================= */}
-
-      <GlassCard title="Basic Information" icon={<User />}>
-
-        <input
-          className={input}
-          placeholder="Phone"
-          value={user.phone || ""}
-          onChange={(e) =>
-            setUser({ ...user, phone: e.target.value })
-          }
-        />
-
-        <input
-          className={input}
-          placeholder="Location"
-          value={user.location || ""}
-          onChange={(e) =>
-            setUser({ ...user, location: e.target.value })
-          }
-        />
-
-        <input
-          className={input}
-          placeholder="LinkedIn"
-          value={user.linkedin || ""}
-          onChange={(e) =>
-            setUser({ ...user, linkedin: e.target.value })
-          }
-        />
-
-        <input
-          className={input}
-          placeholder="Portfolio"
-          value={user.portfolio || ""}
-          onChange={(e) =>
-            setUser({ ...user, portfolio: e.target.value })
-          }
-        />
-
-      </GlassCard>
-
       {/* ================= SUMMARY ================= */}
 
-      <GlassCard title="Professional Summary" icon={<User />}>
-
+      <GlassCard title="Professional Summary">
         <textarea
           className={input}
-          value={user.summary || ""}
+          value={user.profileSummary || ""}
           onChange={(e) =>
             setUser({ ...user, summary: e.target.value })
           }
         />
-
       </GlassCard>
 
       {/* ================= SKILLS ================= */}
 
-      <GlassCard title="Skills" icon={<Award />}>
+      <GlassCard title="Skills">
 
         <div className="flex flex-wrap gap-2 mb-3">
           {(user.skills || []).map((s, i) => (
@@ -372,134 +260,77 @@ export default function Profile() {
 
       {/* ================= EDUCATION ================= */}
 
-      <GlassCard title="Education" icon={<GraduationCap />}>
-
-        {(user.education || []).map((edu, i) => (
-          <div key={i} className="grid md:grid-cols-3 gap-3">
-
-            <input
-              className={input}
-              placeholder="Degree"
-              value={edu.degree}
-              onChange={(e) => {
-                const arr = [...user.education];
-                arr[i].degree = e.target.value;
-                setUser({ ...user, education: arr });
-              }}
-            />
-
-            <input
-              className={input}
-              placeholder="College"
-              value={edu.college}
-              onChange={(e) => {
-                const arr = [...user.education];
-                arr[i].college = e.target.value;
-                setUser({ ...user, education: arr });
-              }}
-            />
-
-            <div className="flex gap-2">
-
-              <input
-                className={input}
-                placeholder="Year"
-                value={edu.year}
-                onChange={(e) => {
-                  const arr = [...user.education];
-                  arr[i].year = e.target.value;
-                  setUser({ ...user, education: arr });
-                }}
-              />
-
-              <button
-                onClick={() => removeEducation(i)}
-                className="bg-red-500 px-3 rounded"
-              >
-                <Trash2 size={16} />
-              </button>
-
-            </div>
-
-          </div>
-        ))}
-
-        <button onClick={addEducation} className="text-indigo-400">
-          + Add Education
-        </button>
-
-      </GlassCard>
+      <DynamicSection
+        title="Education"
+        field="education"
+        user={user}
+        setUser={setUser}
+        input={input}
+        addItem={addItem}
+        removeItem={removeItem}
+        template={{ degree: "", college: "", year: "" }}
+      />
 
       {/* ================= EXPERIENCE ================= */}
 
-      <GlassCard title="Experience" icon={<Briefcase />}>
+      <DynamicSection
+        title="Experience"
+        field="experience"
+        user={user}
+        setUser={setUser}
+        input={input}
+        addItem={addItem}
+        removeItem={removeItem}
+        template={{
+          title: "",
+          company: "",
+          duration: "",
+          description: "",
+        }}
+      />
 
-        {(user.experience || []).map((exp, i) => (
-          <div key={i} className="space-y-2">
+      {/* ================= CERTIFICATIONS ================= */}
 
-            <input
-              className={input}
-              placeholder="Title"
-              value={exp.title}
-              onChange={(e) => {
-                const arr = [...user.experience];
-                arr[i].title = e.target.value;
-                setUser({ ...user, experience: arr });
-              }}
-            />
+      <DynamicSection
+        title="Certifications"
+        field="certifications"
+        user={user}
+        setUser={setUser}
+        input={input}
+        addItem={addItem}
+        removeItem={removeItem}
+        template={{ name: "", issuer: "" }}
+      />
 
-            <input
-              className={input}
-              placeholder="Company"
-              value={exp.company}
-              onChange={(e) => {
-                const arr = [...user.experience];
-                arr[i].company = e.target.value;
-                setUser({ ...user, experience: arr });
-              }}
-            />
+      {/* ================= INTERNSHIPS ================= */}
 
-            <input
-              className={input}
-              placeholder="Duration"
-              value={exp.duration}
-              onChange={(e) => {
-                const arr = [...user.experience];
-                arr[i].duration = e.target.value;
-                setUser({ ...user, experience: arr });
-              }}
-            />
+      <DynamicSection
+        title="Internships"
+        field="internships"
+        user={user}
+        setUser={setUser}
+        input={input}
+        addItem={addItem}
+        removeItem={removeItem}
+        template={{ role: "", company: "" }}
+      />
 
-            <textarea
-              className={input}
-              placeholder="Description"
-              value={exp.description}
-              onChange={(e) => {
-                const arr = [...user.experience];
-                arr[i].description = e.target.value;
-                setUser({ ...user, experience: arr });
-              }}
-            />
+      {/* ================= ACHIEVEMENTS ================= */}
 
-            <button
-              onClick={() => removeExperience(i)}
-              className="bg-red-500 px-3 py-1 rounded"
-            >
-              Delete
-            </button>
-
-          </div>
-        ))}
-
-        <button onClick={addExperience} className="text-indigo-400">
-          + Add Experience
-        </button>
-
-      </GlassCard>
+      <DynamicSection
+        title="Achievements"
+        field="achievements"
+        user={user}
+        setUser={setUser}
+        input={input}
+        addItem={addItem}
+        removeItem={removeItem}
+        template={{ title: "" }}
+      />
 
       {/* ================= RESUME ================= */}
 
-      <GlassCard title="Resume" icon={<Upload />}>
+      <GlassCard title="Resume Upload">
 
         <input
           type="file"
@@ -508,7 +339,7 @@ export default function Profile() {
 
         <button
           onClick={uploadResume}
-          className="bg-indigo-600 px-4 py-2 rounded"
+          className="bg-indigo-600 px-4 py-2 rounded mt-2"
         >
           Upload Resume
         </button>
@@ -518,7 +349,6 @@ export default function Profile() {
       {/* SAVE */}
 
       <div className="flex justify-end mt-6">
-
         <button
           onClick={updateProfile}
           className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-3 rounded-xl flex items-center gap-2"
@@ -526,7 +356,6 @@ export default function Profile() {
           <Save size={18} />
           Save Profile
         </button>
-
       </div>
 
     </div>
@@ -535,14 +364,67 @@ export default function Profile() {
 
 /* ================= GLASS CARD ================= */
 
-function GlassCard({ title, icon, children }) {
+function GlassCard({ title, children }) {
   return (
-    <div className="mt-6 backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 space-y-3">
-      <h2 className="flex items-center gap-2 font-semibold text-lg">
-        {icon}
-        {title}
-      </h2>
+    <div className="mt-6 backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 space-y-3 hover:scale-[1.01] transition">
+      <h2 className="font-semibold text-lg">{title}</h2>
       {children}
     </div>
+  );
+}
+
+/* ================= DYNAMIC SECTION ================= */
+
+function DynamicSection({
+  title,
+  field,
+  user,
+  setUser,
+  input,
+  addItem,
+  removeItem,
+  template,
+}) {
+  return (
+    <GlassCard title={title}>
+
+      {(user[field] || []).map((item, i) => (
+        <div
+          key={i}
+          className="border border-white/10 p-3 rounded-xl relative space-y-2"
+        >
+
+          <button
+            onClick={() => removeItem(field, i)}
+            className="absolute top-2 right-2 bg-red-500 p-1 rounded"
+          >
+            <Trash2 size={14} />
+          </button>
+
+          {Object.keys(template).map((key) => (
+            <input
+              key={key}
+              className={input}
+              placeholder={key}
+              value={item[key]}
+              onChange={(e) => {
+                const arr = [...user[field]];
+                arr[i][key] = e.target.value;
+                setUser({ ...user, [field]: arr });
+              }}
+            />
+          ))}
+
+        </div>
+      ))}
+
+      <button
+        onClick={() => addItem(field, template)}
+        className="text-indigo-400"
+      >
+        + Add {title}
+      </button>
+
+    </GlassCard>
   );
 }

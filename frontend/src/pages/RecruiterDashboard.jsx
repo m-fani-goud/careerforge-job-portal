@@ -30,8 +30,14 @@ export default function RecruiterDashboard() {
 
   const user = JSON.parse(localStorage.getItem("user"));
 
-  const [jobs, setJobs] = useState([]);
-  const [applications, setApplications] = useState([]);
+  const [stats, setStats] = useState({
+    totalJobs: 0,
+    totalApplicants: 0,
+    shortlisted: 0,
+    rejected: 0,
+    pending: 0,
+  });
+
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
@@ -40,13 +46,13 @@ export default function RecruiterDashboard() {
 
   const loadData = async () => {
     try {
-      const jobRes = await API.get("/jobs/my");
-      const appRes = await API.get("/applications/me");
+
+      const statsRes = await API.get("/jobs/recruiter-stats");
       const profileRes = await API.get("/users/profile");
 
-      setJobs(jobRes.data);
-      setApplications(appRes.data);
+      setStats(statsRes.data);
       setProfile(profileRes.data);
+
     } catch (err) {
       console.log(err);
     }
@@ -54,13 +60,12 @@ export default function RecruiterDashboard() {
 
   // ================= STATS =================
 
-  const totalJobs = jobs.length;
-  const totalApplicants = applications.length;
-  const shortlisted = applications.filter(a => a.status === "shortlisted").length;
-  const rejected = applications.filter(a => a.status === "rejected").length;
+  const { totalJobs, totalApplicants, shortlisted, rejected, pending } = stats;
 
   const successRate =
-    totalApplicants === 0 ? 0 : Math.round((shortlisted / totalApplicants) * 100);
+    totalApplicants === 0
+      ? 0
+      : Math.round((shortlisted / totalApplicants) * 100);
 
   // ================= AI SCORE =================
 
@@ -69,7 +74,7 @@ export default function RecruiterDashboard() {
     Math.round(
       totalJobs * 12 +
       shortlisted * 6 +
-      (successRate * 0.5)
+      successRate * 0.5
     )
   );
 
@@ -92,20 +97,12 @@ export default function RecruiterDashboard() {
     profile?.email,
     profile?.companyName,
     totalJobs > 0,
-    totalApplicants > 0,
   ];
 
   const completion =
     Math.round((sections.filter(Boolean).length / sections.length) * 100);
 
   // ================= CHART DATA =================
-
-  const lineData = [
-    { name: "Week 1", value: 4 },
-    { name: "Week 2", value: 7 },
-    { name: "Week 3", value: 5 },
-    { name: "Week 4", value: totalApplicants || 2 },
-  ];
 
   const pieData = [
     { name: "Shortlisted", value: shortlisted },
@@ -114,20 +111,12 @@ export default function RecruiterDashboard() {
 
   const COLORS = ["#4ade80", "#f87171"];
 
-  // ================= AI INSIGHTS =================
-
-  const aiInsights = [
-    "Post more jobs to increase visibility",
-    "Respond faster to applicants",
-    "High success rate detected — keep it up",
-  ];
-
   return (
     <RecruiterLayout>
 
       <div className="min-h-screen p-6 text-white bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#312e81]">
 
-        {/* ================= HEADER ================= */}
+        {/* HEADER */}
 
         <motion.div
           initial={{ opacity: 0, y: -30 }}
@@ -137,20 +126,12 @@ export default function RecruiterDashboard() {
 
           <div className="flex items-center gap-6">
 
-            {/* Avatar Ring */}
-
             <div className="relative w-24 h-24">
 
               <svg className="absolute w-24 h-24">
-                <circle
-                  cx="48"
-                  cy="48"
-                  r="42"
-                  stroke="white"
-                  strokeOpacity="0.2"
-                  strokeWidth="6"
-                  fill="none"
-                />
+                <circle cx="48" cy="48" r="42"
+                  stroke="white" strokeOpacity="0.2"
+                  strokeWidth="6" fill="none" />
 
                 <circle
                   cx="48"
@@ -193,31 +174,19 @@ export default function RecruiterDashboard() {
 
           </div>
 
-          <div className="flex items-center gap-4">
-
-            {/* Notification */}
-            <div className="relative">
-              <Bell />
-              {applications.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-xs px-2 rounded-full">
-                  {applications.length}
-                </span>
-              )}
-            </div>
-
-            <Link
-              to="/post-job"
-              className="bg-gradient-to-r from-yellow-400 to-pink-500 text-black px-5 py-2 rounded-lg font-semibold"
-            >
-              Post Job
-            </Link>
-
+          <div className="relative">
+            <Bell />
+            {totalApplicants > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-xs px-2 rounded-full">
+                {totalApplicants}
+              </span>
+            )}
           </div>
 
         </motion.div>
 
 
-        {/* ================= AI SCORE ================= */}
+        {/* STATS */}
 
         <div className="grid md:grid-cols-4 gap-6 mb-6">
 
@@ -229,7 +198,7 @@ export default function RecruiterDashboard() {
         </div>
 
 
-        {/* ================= AI PANEL ================= */}
+        {/* AI PANEL */}
 
         <div className="bg-white/10 backdrop-blur-xl p-6 rounded-xl mb-6">
 
@@ -251,83 +220,30 @@ export default function RecruiterDashboard() {
 
           </div>
 
-          {/* Insights */}
-
-          <div className="mt-4 space-y-2">
-
-            {aiInsights.map((tip, i) => (
-              <p key={i} className="text-sm opacity-80">
-                ✅ {tip}
-              </p>
-            ))}
-
-          </div>
-
         </div>
 
 
-        {/* ================= CHARTS ================= */}
+        {/* PIE CHART */}
 
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
+        <div className="bg-white/10 p-6 rounded-xl mb-6">
 
-          <div className="bg-white/10 p-6 rounded-xl">
+          <h3 className="mb-3">Hiring Funnel</h3>
 
-            <h3 className="mb-3">Applications Trend</h3>
-
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={lineData}>
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#facc15"
-                  strokeWidth={3}
-                />
-                <Tooltip />
-              </LineChart>
-            </ResponsiveContainer>
-
-          </div>
-
-          <div className="bg-white/10 p-6 rounded-xl">
-
-            <h3 className="mb-3">Hiring Funnel</h3>
-
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  outerRadius={80}
-                  label
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={index} fill={COLORS[index]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-
-          </div>
-
-        </div>
-
-
-        {/* ================= ACTIONS ================= */}
-
-        <div className="grid md:grid-cols-2 gap-6">
-
-          <ActionCard
-            to="/post-job"
-            title="Create Job"
-            icon={<PlusCircle />}
-          />
-
-          <ActionCard
-            to="/posted-jobs"
-            title="Manage Jobs"
-            icon={<Briefcase />}
-          />
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                outerRadius={80}
+                label
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={index} fill={COLORS[index]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
 
         </div>
 
@@ -338,16 +254,14 @@ export default function RecruiterDashboard() {
 }
 
 
-/* ================= COMPONENTS ================= */
+/* COMPONENTS */
 
 function Stat({ title, value, icon, suffix = "" }) {
   return (
     <div className="bg-white/10 backdrop-blur-xl p-5 rounded-xl flex items-center gap-4">
-
       <div className="p-3 bg-gradient-to-r from-yellow-400 to-pink-500 rounded-lg text-black">
         {icon}
       </div>
-
       <div>
         <p className="text-sm opacity-70">{title}</p>
         <p className="text-xl font-bold">
@@ -355,19 +269,6 @@ function Stat({ title, value, icon, suffix = "" }) {
           {suffix}
         </p>
       </div>
-
     </div>
-  );
-}
-
-function ActionCard({ to, title, icon }) {
-  return (
-    <Link
-      to={to}
-      className="bg-white/10 backdrop-blur-xl p-6 rounded-xl hover:scale-105 transition"
-    >
-      <div className="text-yellow-300 mb-2">{icon}</div>
-      <h2 className="text-lg font-semibold">{title}</h2>
-    </Link>
   );
 }

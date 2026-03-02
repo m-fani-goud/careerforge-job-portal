@@ -28,8 +28,28 @@ const userSchema = new mongoose.Schema(
       default: "user",
     },
 
-    // ================= JOB SEEKER PROFILE =================
+    // ================= CONTACT INFO =================
+    phone: {
+      type: String,
+      default: "",
+    },
 
+    location: {
+      type: String,
+      default: "",
+    },
+
+    linkedin: {
+      type: String,
+      default: "",
+    },
+
+    portfolio: {
+      type: String,
+      default: "",
+    },
+
+    // ================= PROFILE =================
     profileSummary: {
       type: String,
       default: "",
@@ -41,6 +61,7 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
+    // ================= EDUCATION =================
     education: [
       {
         degree: String,
@@ -49,6 +70,7 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
+    // ================= EXPERIENCE =================
     experience: [
       {
         title: String,
@@ -58,6 +80,7 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
+    // ================= INTERNSHIPS =================
     internships: [
       {
         role: String,
@@ -67,6 +90,7 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
+    // ================= PROJECTS =================
     projects: [
       {
         title: String,
@@ -75,13 +99,7 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-    achievements: [
-      {
-        title: String,
-        description: String,
-      },
-    ],
-
+    // ================= CERTIFICATIONS =================
     certifications: [
       {
         name: String,
@@ -90,18 +108,24 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
+    // ================= ACHIEVEMENTS =================
+    achievements: [
+      {
+        title: String,
+        description: String,
+      },
+    ],
+
+    // ================= FILES =================
     resume: {
       type: String,
       default: "",
     },
 
-    // ================= PASSWORD RESET =================
-    resetOTP: {
+    avatar: {
       type: String,
       default: "",
     },
-
-    resetOTPExpire: Date,
 
     // ================= EMAIL VERIFICATION =================
     isVerified: {
@@ -116,7 +140,15 @@ const userSchema = new mongoose.Schema(
 
     verifyOTPExpire: Date,
 
-    // ================= RECRUITER COMPANY =================
+    // ================= PASSWORD RESET =================
+    resetOTP: {
+      type: String,
+      default: "",
+    },
+
+    resetOTPExpire: Date,
+
+    // ================= RECRUITER INFO =================
     companyName: {
       type: String,
       default: "",
@@ -139,21 +171,12 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
-    // ================= EMAIL APPROVAL TOKEN =================
     approvalToken: {
       type: String,
       default: "",
     },
 
-    approvalTokenExpire: {
-      type: Date,
-    },
-
-    // ================= PROFILE IMAGE =================
-    avatar: {
-      type: String,
-      default: "",
-    },
+    approvalTokenExpire: Date,
   },
   {
     timestamps: true,

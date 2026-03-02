@@ -3,6 +3,7 @@ import {
   createJob,
   getJobs,
   getMyJobs,
+  getRecruiterStats,   // ⭐ ADD THIS
 } from "../controllers/jobController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -10,14 +11,20 @@ import { protect } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 
-// Create job (recruiter)
+// ================= CREATE JOB =================
 router.post("/", protect, createJob);
 
-// Get all jobs (public)
+
+// ================= GET ALL JOBS =================
 router.get("/", getJobs);
 
-// Get recruiter jobs
+
+// ================= GET RECRUITER JOBS =================
 router.get("/my", protect, getMyJobs);
+
+
+// ================= ⭐ RECRUITER DASHBOARD STATS =================
+router.get("/recruiter-stats", protect, getRecruiterStats);
 
 
 export default router;

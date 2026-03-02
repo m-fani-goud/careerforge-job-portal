@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 import Confetti from "react-confetti";
-
 import {
   Mail,
   Phone,
@@ -10,10 +9,12 @@ import {
   Save,
   Trash2,
   Camera,
+  Upload,
 } from "lucide-react";
 
-export default function Profile() {
+const BASE_URL = import.meta.env.VITE_API_URL;
 
+export default function Profile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [resumeFile, setResumeFile] = useState(null);
@@ -33,7 +34,6 @@ export default function Profile() {
 
   const calculateScore = () => {
     let score = 0;
-
     if (user?.phone) score += 10;
     if (user?.location) score += 10;
     if (user?.linkedin) score += 10;
@@ -42,7 +42,6 @@ export default function Profile() {
     if (user?.education?.length) score += 15;
     if (user?.experience?.length) score += 15;
     if (user?.resume) score += 10;
-
     return Math.min(score, 100);
   };
 
@@ -68,9 +67,13 @@ export default function Profile() {
   const uploadAvatar = async (file) => {
     const formData = new FormData();
     formData.append("avatar", file);
-
     const res = await API.post("/users/upload-avatar", formData);
     setUser({ ...user, avatar: res.data.avatar });
+  };
+
+  const removeAvatar = async () => {
+    await API.delete("/users/remove-avatar");
+    setUser({ ...user, avatar: "" });
   };
 
   // ================= RESUME =================
@@ -78,7 +81,6 @@ export default function Profile() {
   const uploadResume = async () => {
     const formData = new FormData();
     formData.append("resume", resumeFile);
-
     const res = await API.post("/users/upload-resume", formData);
     setUser({ ...user, resume: res.data.resume });
   };
@@ -94,12 +96,10 @@ export default function Profile() {
 
   const addSkill = () => {
     if (!skillInput) return;
-
     setUser({
       ...user,
       skills: [...(user.skills || []), skillInput],
     });
-
     setSkillInput("");
   };
 
@@ -125,17 +125,52 @@ export default function Profile() {
 
         <div className="relative">
 
-          {user.avatar ? (
-            <img
-              src={`${import.meta.env.VITE_API_URL}/${user.avatar}`}
-              className="w-28 h-28 rounded-full object-cover border-2 border-indigo-400"
+          {/* Animated Ring */}
+          <svg className="w-32 h-32 rotate-[-90deg]">
+            <circle
+              cx="64"
+              cy="64"
+              r="56"
+              stroke="white"
+              strokeOpacity="0.2"
+              strokeWidth="6"
+              fill="none"
             />
-          ) : (
-            <div className="w-28 h-28 rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-bold">
-              {user.name?.charAt(0)}
-            </div>
-          )}
+            <circle
+              cx="64"
+              cy="64"
+              r="56"
+              stroke="url(#grad)"
+              strokeWidth="6"
+              fill="none"
+              strokeDasharray={350}
+              strokeDashoffset={350 - (350 * score) / 100}
+              strokeLinecap="round"
+            />
+            <defs>
+              <linearGradient id="grad">
+                <stop offset="0%" stopColor="#facc15" />
+                <stop offset="100%" stopColor="#ec4899" />
+              </linearGradient>
+            </defs>
+          </svg>
 
+          <div className="absolute inset-0 flex items-center justify-center">
+
+            {user.avatar ? (
+              <img
+                src={`${BASE_URL}/${user.avatar}`}
+                className="w-24 h-24 rounded-full object-cover border-2 border-indigo-400"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center text-3xl font-bold">
+                {user.name?.charAt(0)}
+              </div>
+            )}
+
+          </div>
+
+          {/* Upload */}
           <label className="absolute bottom-0 right-0 bg-white text-black p-2 rounded-full cursor-pointer">
             <input
               type="file"
@@ -145,6 +180,15 @@ export default function Profile() {
             <Camera size={16} />
           </label>
 
+          {/* Remove */}
+          {user.avatar && (
+            <button
+              onClick={removeAvatar}
+              className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs bg-red-500 px-3 py-1 rounded-full"
+            >
+              Remove
+            </button>
+          )}
         </div>
 
         <div className="flex-1">
@@ -197,46 +241,6 @@ export default function Profile() {
 
       </GlassCard>
 
-      {/* ================= CAREER INFO ================= */}
-
-      <GlassCard title="Career Information">
-
-        <input
-          className={input}
-          placeholder="Headline (Frontend Developer)"
-          value={user.headline || ""}
-          onChange={(e) => setUser({ ...user, headline: e.target.value })}
-        />
-
-        <input
-          className={input}
-          placeholder="Current Company"
-          value={user.currentCompany || ""}
-          onChange={(e) =>
-            setUser({ ...user, currentCompany: e.target.value })
-          }
-        />
-
-        <input
-          className={input}
-          placeholder="Total Experience"
-          value={user.totalExperience || ""}
-          onChange={(e) =>
-            setUser({ ...user, totalExperience: e.target.value })
-          }
-        />
-
-        <input
-          className={input}
-          placeholder="Expected Salary"
-          value={user.expectedSalary || ""}
-          onChange={(e) =>
-            setUser({ ...user, expectedSalary: e.target.value })
-          }
-        />
-
-      </GlassCard>
-
       {/* ================= SUMMARY ================= */}
 
       <GlassCard title="Professional Summary">
@@ -245,10 +249,7 @@ export default function Profile() {
           className={input}
           value={user.profileSummary || ""}
           onChange={(e) =>
-            setUser({
-              ...user,
-              profileSummary: e.target.value,
-            })
+            setUser({ ...user, profileSummary: e.target.value })
           }
         />
 
@@ -287,7 +288,7 @@ export default function Profile() {
 
       </GlassCard>
 
-      {/* ================= EDUCATION ================= */}
+      {/* ================= DYNAMIC SECTIONS ================= */}
 
       <DynamicSection
         title="Education"
@@ -295,8 +296,6 @@ export default function Profile() {
         template={{ degree: "", college: "", year: "" }}
         {...{ user, setUser, input, addItem, removeItem }}
       />
-
-      {/* ================= EXPERIENCE ================= */}
 
       <DynamicSection
         title="Experience"
@@ -310,8 +309,6 @@ export default function Profile() {
         {...{ user, setUser, input, addItem, removeItem }}
       />
 
-      {/* ================= INTERNSHIPS ================= */}
-
       <DynamicSection
         title="Internships"
         field="internships"
@@ -324,8 +321,6 @@ export default function Profile() {
         {...{ user, setUser, input, addItem, removeItem }}
       />
 
-      {/* ================= CERTIFICATIONS ================= */}
-
       <DynamicSection
         title="Certifications"
         field="certifications"
@@ -336,8 +331,6 @@ export default function Profile() {
         }}
         {...{ user, setUser, input, addItem, removeItem }}
       />
-
-      {/* ================= ACHIEVEMENTS ================= */}
 
       <DynamicSection
         title="Achievements"
@@ -361,8 +354,9 @@ export default function Profile() {
 
         <button
           onClick={uploadResume}
-          className="bg-indigo-600 px-4 py-2 rounded mt-2"
+          className="bg-indigo-600 px-4 py-2 rounded mt-2 flex items-center gap-2"
         >
+          <Upload size={16} />
           Upload Resume
         </button>
 
@@ -371,7 +365,6 @@ export default function Profile() {
       {/* SAVE */}
 
       <div className="flex justify-end mt-6">
-
         <button
           onClick={updateProfile}
           className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-3 rounded-xl flex items-center gap-2"
@@ -379,7 +372,6 @@ export default function Profile() {
           <Save size={18} />
           Save Profile
         </button>
-
       </div>
 
     </div>
